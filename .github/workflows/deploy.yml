@@ -21,7 +21,7 @@ jobs:
           node-version: '18'
           cache: 'npm'
 
-      - name: Install Dependencies for Build
+      - name: Install All Dependencies
         run: npm install
 
       - name: Build Project
@@ -31,12 +31,7 @@ jobs:
           echo "NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}" >> .env.local
           export NODE_OPTIONS=--max-old-space-size=4096 && npm run build
       
-      # --- 关键修复：自动将您的服务器添加到信任列表 ---
-      - name: Add remote host to known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H "${{ secrets.SERVER_HOST }}" >> ~/.ssh/known_hosts
-
+      # --- 新增的部署前清理步骤 (优化版) ---
       - name: Clean old files on server
         uses: appleboy/ssh-action@master
         with:
@@ -44,9 +39,12 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            # 为了安全，我们先检查目录是否存在，然后再执行删除
             if [ -d /www/wwwroot/8.148.7.13 ]; then
               cd /www/wwwroot/8.148.7.13
+              # 解锁 .user.ini 文件 (如果有的话)，`|| true` 可以防止在文件不存在时报错
               chattr -i .user.ini || true
+              # 删除所有文件，包括隐藏文件
               rm -rf ./* .??*
               echo "✅ Old files cleaned up."
             else
@@ -54,16 +52,20 @@ jobs:
               mkdir -p /www/wwwroot/8.148.7.13
             fi
 
-      - name: Deploy to Server
+      # --- 部署步骤优化 ---
+      - name: Deploy to Server with node_modules
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: ".next, package.json, package-lock.json, public"
-          target: "/www/wwwroot/8.148.7.13"
+          # 确保 .env.local.example 文件也被上传
+          source: ".next, package.json, public, node_modules, .env.local.example"
+          target: "/www/wwwroot/8.148.7.13" 
+          strip_components: 1
 
-      - name: Install Dependencies and Restart PM2
+      # --- 启动/重启步骤优化 (最终版) ---
+      - name: Restart PM2 Application
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -71,25 +73,20 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /www/wwwroot/8.148.7.13
+            # 在服务器上根据示例文件，创建实际运行所需的环境变量文件
+            # 这一步至关重要，它为正在运行的应用提供了数据库密码等信息
+            cp .env.local.example .env.local
             
-            # --- 关键修复：修复服务器环境并安装依赖 ---
-            # 明确指定 Node.js 的路径，并将其加入到本次会话的环境变量中
-            export PATH=/www/server/nodejs/v18.20.8/bin:$PATH
-            # 现在，npm install 命令一定会成功
-            npm install --production
-            
-            # 直接在服务器上创建 .env.local 文件
-            echo "DATABASE_URL='${{ secrets.DATABASE_URL }}'" > .env.local
-            echo "JWT_SECRET='${{ secrets.JWT_SECRET }}'" >> .env.local
-            echo "NEXTAUTH_URL='${{ secrets.NEXTAUTH_URL }}'" >> .env.local
-            echo "✅ Runtime .env.local file created."
-
+            # 定义 pm2 的完整路径
+            PM2_PATH=/www/server/nodejs/v18.20.8/bin/pm2
             # 定义 next 命令的准确相对路径
             NEXT_BIN=./node_modules/.bin/next
 
+            # 全局安装 pm2 (这是一个保险措施，确保 pm2 存在)
+            npm i -g pm2
             # 先删除旧的同名进程（如果有的话），`|| true` 可以防止在进程不存在时报错
-            pm2 delete pichub || true
+            $PM2_PATH delete pichub || true
             # 启动新的进程
-            pm2 start $NEXT_BIN --name "pichub" -- start
+            $PM2_PATH start $NEXT_BIN --name "pichub" -- start
             # 保存进程列表，以便服务器重启后能自动恢复
-            pm2 save
+            $PM2_PATH save

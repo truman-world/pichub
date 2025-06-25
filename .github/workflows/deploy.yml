@@ -29,7 +29,7 @@ jobs:
           echo "NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}" >> .env.local
           export NODE_OPTIONS=--max-old-space-size=4096 && npm run build
 
-      # --- 新增的部署前清理步骤 (排除 .env.local 文件) ---
+      # --- 部署前清理步骤 (排除 .env.local 文件) ---
       - name: Clean old files on server (exclude .env.local)
         uses: appleboy/ssh-action@master
         with:
@@ -37,7 +37,7 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # 删除目标目录的所有文件，包括隐藏文件，但排除 .env.local 文件
+            # 清理目标目录的所有文件，包括隐藏文件，但排除 .env.local 文件
             find /www/wwwroot/8.148.7.13/* ! -name '.env.local' -exec rm -rf {} +
             find /www/wwwroot/8.148.7.13/.* ! -name '.env.local' -exec rm -rf {} +
             echo "✅ Old files cleaned up, .env.local file preserved."

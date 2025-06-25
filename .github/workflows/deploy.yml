@@ -65,6 +65,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 20m # <--- 关键修复：延长超时时间到20分钟
           script: |
             cd /www/wwwroot/8.148.7.13
             

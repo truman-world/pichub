@@ -31,7 +31,6 @@ jobs:
           echo "NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}" >> .env.local
           export NODE_OPTIONS=--max-old-space-size=4096 && npm run build
       
-      # --- 新增的部署前清理步骤 (优化版) ---
       - name: Clean old files on server
         uses: appleboy/ssh-action@master
         with:
@@ -39,12 +38,9 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # 为了安全，我们先检查目录是否存在，然后再执行删除
             if [ -d /www/wwwroot/8.148.7.13 ]; then
               cd /www/wwwroot/8.148.7.13
-              # 解锁 .user.ini 文件 (如果有的话)，`|| true` 可以防止在文件不存在时报错
               chattr -i .user.ini || true
-              # 删除所有文件，包括隐藏文件
               rm -rf ./* .??*
               echo "✅ Old files cleaned up."
             else
@@ -52,20 +48,18 @@ jobs:
               mkdir -p /www/wwwroot/8.148.7.13
             fi
 
-      # --- 部署步骤优化 ---
       - name: Deploy to Server with node_modules
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          # 确保 .env.local.example 文件也被上传
-          source: ".next, package.json, public, node_modules, .env.local.example"
+          source: ".next, package.json, public, node_modules"
           target: "/www/wwwroot/8.148.7.13" 
           strip_components: 1
 
       # --- 启动/重启步骤优化 (最终版) ---
-      - name: Restart PM2 Application
+      - name: Setup Environment and Restart PM2
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -73,10 +67,15 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /www/wwwroot/8.148.7.13
-            # 在服务器上根据示例文件，创建实际运行所需的环境变量文件
-            # 这一步至关重要，它为正在运行的应用提供了数据库密码等信息
-            cp .env.local.example .env.local
             
+            # --- 关键修复：直接在服务器上创建 .env.local 文件 ---
+            # 不再依赖任何复制操作，而是直接从 secrets 写入
+            # 使用单引号可以防止特殊字符导致的问题
+            echo "DATABASE_URL='${{ secrets.DATABASE_URL }}'" > .env.local
+            echo "JWT_SECRET='${{ secrets.JWT_SECRET }}'" >> .env.local
+            echo "NEXTAUTH_URL='${{ secrets.NEXTAUTH_URL }}'" >> .env.local
+            echo "✅ Runtime .env.local file created."
+
             # 定义 pm2 的完整路径
             PM2_PATH=/www/server/nodejs/v18.20.8/bin/pm2
             # 定义 next 命令的准确相对路径

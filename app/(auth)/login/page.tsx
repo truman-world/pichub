@@ -14,8 +14,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/components/ui/use-toast'
 
+// --- 修改：登录验证现在接受邮箱或普通字符串 ---
 const loginSchema = z.object({
-  email: z.string().email('请输入有效的邮箱地址'),
+  identifier: z.string().min(1, '请输入您的邮箱或用户名'),
   password: z.string().min(1, '请输入密码'),
 });
 
@@ -60,7 +61,7 @@ export default function LoginPage() {
     } catch (error: any) {
       toast({
         title: "登录失败",
-        description: error.message || "请检查您的邮箱和密码",
+        description: "请检查您的账号和密码。", // 使用更通用的提示
         variant: "destructive"
       });
     } finally {
@@ -74,7 +75,6 @@ export default function LoginPage() {
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
             <div className="h-12 w-12 bg-primary rounded-lg flex items-center justify-center">
-              {/* 这里是修改的地方：删除了 alt="logo" */}
               <ImageIcon className="h-8 w-8 text-primary-foreground" />
             </div>
           </div>
@@ -86,16 +86,17 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">邮箱</Label>
+              {/* --- 修改：这里的标签和输入框现在更通用 --- */}
+              <Label htmlFor="identifier">邮箱 / 用户名</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
-                {...register('email')}
+                id="identifier"
+                type="text"
+                placeholder="name@example.com 或您的用户名"
+                {...register('identifier')}
                 disabled={isLoading}
               />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
+              {errors.identifier && (
+                <p className="text-sm text-destructive">{errors.identifier.message}</p>
               )}
             </div>
             <div className="space-y-2">

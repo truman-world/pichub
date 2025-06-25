@@ -51,6 +51,7 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
+    "@types/ali-oss": "^6.16.11",
     "@types/bcrypt": "^5.0.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/ftp": "^0.3.36",

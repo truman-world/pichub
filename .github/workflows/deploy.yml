@@ -24,19 +24,19 @@ jobs:
       - name: Install Dependencies for Build
         run: npm install
 
+      # --- 关键修改：构建时不再需要 .env.local ---
+      # Prisma 在构建时只需要知道数据库类型，而这可以从 schema.prisma 文件中获取
+      # 我们不再需要访问真实的数据库，因此也不再需要 secrets。
       - name: Build Project
-        run: |
-          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env.local
-          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env.local
-          echo "NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}" >> .env.local
-          npm run build
+        run: npm run build
       
       - name: Add remote host to known_hosts
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H "${{ secrets.SERVER_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Clean old files on server
+      # --- 关键修改：清理文件时，明确排除 .env.local ---
+      - name: Clean old files on server (keeping .env.local)
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -45,9 +45,9 @@ jobs:
           script: |
             mkdir -p /www/wwwroot/8.148.7.13
             cd /www/wwwroot/8.148.7.13
-            chattr -i .user.ini || true
-            rm -rf ./* .??*
-            echo "✅ Old files cleaned up."
+            shopt -s extglob
+            rm -rf !(.env.local)
+            echo "✅ Old files cleaned up, .env.local was preserved."
 
       - name: Deploy Application Code
         uses: appleboy/scp-action@master
@@ -58,37 +58,28 @@ jobs:
           source: ".next, package.json, package-lock.json, public, prisma"
           target: "/www/wwwroot/8.148.7.13"
 
-      # --- 启动/重启步骤优化 (最终版) ---
+      # --- 关键修改：服务器端不再创建 .env.local ---
       - name: Install Dependencies and Restart PM2
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 20m # <--- 关键修复：延长超时时间到20分钟
+          command_timeout: 20m
           script: |
             cd /www/wwwroot/8.148.7.13
             
             # 明确指定 Node.js 的路径
             export PATH=/www/server/nodejs/v18.20.8/bin:$PATH
 
-            # --- 关键修复：在安装依赖前，强制清理 NPM 缓存 ---
+            # 清理缓存并安装依赖
             npm cache clean --force
-            echo "✅ npm cache cleaned."
-            
-            # 安装生产依赖
             npm install --production
             
-            # --- 核心逻辑修复：先创建 .env.local 文件 ---
-            echo "DATABASE_URL='${{ secrets.DATABASE_URL }}'" > .env.local
-            echo "JWT_SECRET='${{ secrets.JWT_SECRET }}'" >> .env.local
-            echo "NEXTAUTH_URL='${{ secrets.NEXTAUTH_URL }}'" >> .env.local
-            echo "✅ Runtime .env.local file created."
-            
-            # --- 核心逻辑修复：然后再生成 Prisma Client ---
-            # 现在，这个命令可以读取到 .env.local 中的 DATABASE_URL
+            # 生成 Prisma Client
+            # 它会自动读取您在服务器上创建的 .env.local 文件
             npx prisma generate
-            echo "✅ Prisma Client generated on server."
+            echo "✅ Prisma Client generated using local .env.local."
             
             # 使用 PM2 启动或重启应用
             PM2_BIN=/www/server/nodejs/v18.20.8/bin/pm2

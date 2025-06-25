@@ -1,3 +1,5 @@
+# .github/workflows/deploy.yml
+
 name: Build and Deploy to Aliyun ECS
 
 on:
@@ -19,7 +21,7 @@ jobs:
           node-version: '18'
           cache: 'npm'
 
-      - name: Install All Dependencies
+      - name: Install Dependencies
         run: npm install
 
       - name: Build Project
@@ -29,42 +31,28 @@ jobs:
           echo "NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}" >> .env.local
           export NODE_OPTIONS=--max-old-space-size=4096 && npm run build
 
-      # --- 部署前清理步骤 (排除 .env.local 文件) ---
-      - name: Clean old files on server (exclude .env.local)
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            # 清理目标目录的所有文件，包括隐藏文件，但排除 .env.local 文件
-            find /www/wwwroot/8.148.7.13/* ! -name '.env.local' -exec rm -rf {} +
-            find /www/wwwroot/8.148.7.13/.* ! -name '.env.local' -exec rm -rf {} +
-            echo "✅ Old files cleaned up, .env.local file preserved."
-
-      # --- 部署步骤优化 ---
-      - name: Deploy to Server with node_modules
+      - name: Deploy to Server
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }} # 直接使用原始密钥
           source: ".next, package.json, public, node_modules, .env.local.example"
-          target: "/www/wwwroot/8.148.7.13"
+          target: "/www/wwwroot/8.148.7.13" 
           strip_components: 1
 
-      # --- 启动/重启步骤优化 (最终版) ---
       - name: Restart PM2 Application
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }} # 直接使用原始密钥
           script: |
             cd /www/wwwroot/8.148.7.13
-            # 如果 .env.local 文件不存在，则直接从 .env.local.example 创建
-            cp .env.local.example .env.local || echo "No example file found, skipping creation."
-            
+            # 在服务器上根据示例文件，创建实际运行所需的环境变量文件
+            # 这一步至关重要，它为正在运行的应用提供了数据库密码等信息
+            cp .env.local.example .env.local
+
             # 定义 pm2 的完整路径
             PM2_PATH=/www/server/nodejs/v18.20.8/bin/pm2
             # 定义 next 命令的准确相对路径

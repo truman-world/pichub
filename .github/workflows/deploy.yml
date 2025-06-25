@@ -57,7 +57,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: ".next, package.json, package-lock.json, public, prisma"
           target: "/www/wwwroot/8.148.7.13"
-    
+
+      # --- 启动/重启步骤优化 (最终版) ---
       - name: Install Dependencies and Restart PM2
         uses: appleboy/ssh-action@master
         with:
@@ -67,12 +68,17 @@ jobs:
           script: |
             cd /www/wwwroot/8.148.7.13
             
-            # 明确指定 Node.js 的路径
+            # 明确指定 Node.js 的路径，并将其加入到本次会话的环境变量中
             export PATH=/www/server/nodejs/v18.20.8/bin:$PATH
+
+            # --- 关键修复：在安装依赖前，强制清理 NPM 缓存 ---
+            npm cache clean --force
+            echo "✅ npm cache cleaned."
+            
             # 安装生产依赖 (现在会包含 prisma)
             npm install --production
             
-            # --- 关键修复：在服务器上生成 Prisma Client ---
+            # 在服务器上生成 Prisma Client
             npx prisma generate
             
             # 直接在服务器上创建 .env.local 文件

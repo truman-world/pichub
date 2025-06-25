@@ -31,7 +31,7 @@ jobs:
           echo "NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}" >> .env.local
           export NODE_OPTIONS=--max-old-space-size=4096 && npm run build
       
-      # --- 新增的部署前清理步骤 ---
+      # --- 新增的部署前清理步骤 (优化版) ---
       - name: Clean old files on server
         uses: appleboy/ssh-action@master
         with:
@@ -63,7 +63,7 @@ jobs:
           target: "/www/wwwroot/8.148.7.13" 
           strip_components: 1
 
-      # --- 启动/重启步骤优化 ---
+      # --- 启动/重启步骤优化 (最终版) ---
       - name: Restart PM2 Application
         uses: appleboy/ssh-action@master
         with:

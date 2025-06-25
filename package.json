@@ -9,7 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.583.0",
     "@hookform/resolvers": "^3.4.2",
     "@octokit/rest": "^20.1.1",
     "@prisma/client": "^5.12.1",
@@ -20,6 +19,7 @@
     "@radix-ui/react-toast": "^1.1.5",
     "ali-oss": "^6.20.0",
     "autoprefixer": "^10.4.19",
+    "aws-sdk": "^2.1628.0",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",
     "browser-image-compression": "^2.0.2",
@@ -52,6 +52,7 @@
   },
   "devDependencies": {
     "@types/ali-oss": "^6.16.11",
+    "@types/aws-sdk": "^2.7.0",
     "@types/bcrypt": "^5.0.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/ftp": "^0.3.36",

@@ -25,6 +25,7 @@ export async function POST(request: Request) {
     });
 
     if (existingUser) {
+      // 明确返回 409 状态码，表示冲突
       return new NextResponse('User already exists', { status: 409 });
     }
 

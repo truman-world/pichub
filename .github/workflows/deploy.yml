@@ -29,8 +29,13 @@ jobs:
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env.local
           echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env.local
           echo "NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}" >> .env.local
-          export NODE_OPTIONS=--max-old-space-size=4096 && npm run build
+          npm run build
       
+      - name: Add remote host to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "${{ secrets.SERVER_HOST }}" >> ~/.ssh/known_hosts
+
       - name: Clean old files on server
         uses: appleboy/ssh-action@master
         with:
@@ -38,28 +43,21 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            if [ -d /www/wwwroot/8.148.7.13 ]; then
-              cd /www/wwwroot/8.148.7.13
-              chattr -i .user.ini || true
-              rm -rf ./* .??*
-              echo "✅ Old files cleaned up."
-            else
-              echo "✅ Directory does not exist, creating now..."
-              mkdir -p /www/wwwroot/8.148.7.13
-            fi
+            mkdir -p /www/wwwroot/8.148.7.13
+            cd /www/wwwroot/8.148.7.13
+            chattr -i .user.ini || true
+            rm -rf ./* .??*
+            echo "✅ Old files cleaned up."
 
-      # --- 部署步骤优化 ---
-      # 我们不再上传 node_modules
       - name: Deploy Application Code
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: ".next, package.json, package-lock.json, public"
+          source: ".next, package.json, package-lock.json, public, prisma"
           target: "/www/wwwroot/8.148.7.13"
     
-      # --- 启动/重启步骤优化 (最终版) ---
       - name: Install Dependencies and Restart PM2
         uses: appleboy/ssh-action@master
         with:
@@ -69,12 +67,13 @@ jobs:
           script: |
             cd /www/wwwroot/8.148.7.13
             
-            # --- 关键修复：修复服务器环境并安装依赖 ---
-            # 明确指定 Node.js 的路径，并将其加入到本次会话的环境变量中
+            # 明确指定 Node.js 的路径
             export PATH=/www/server/nodejs/v18.20.8/bin:$PATH
-            # 现在，npm install 命令一定会成功
-            # --production 标志意味着只安装 dependencies 中的依赖，跳过 devDependencies，可以加快速度
+            # 安装生产依赖 (现在会包含 prisma)
             npm install --production
+            
+            # --- 关键修复：在服务器上生成 Prisma Client ---
+            npx prisma generate
             
             # 直接在服务器上创建 .env.local 文件
             echo "DATABASE_URL='${{ secrets.DATABASE_URL }}'" > .env.local
@@ -82,12 +81,9 @@ jobs:
             echo "NEXTAUTH_URL='${{ secrets.NEXTAUTH_URL }}'" >> .env.local
             echo "✅ Runtime .env.local file created."
 
-            # 定义 next 命令的准确相对路径
+            PM2_BIN=/www/server/nodejs/v18.20.8/bin/pm2
             NEXT_BIN=./node_modules/.bin/next
 
-            # 先删除旧的同名进程（如果有的话），`|| true` 可以防止在进程不存在时报错
-            pm2 delete pichub || true
-            # 启动新的进程
-            pm2 start $NEXT_BIN --name "pichub" -- start
-            # 保存进程列表，以便服务器重启后能自动恢复
-            pm2 save
+            $PM2_BIN delete pichub || true
+            $PM2_BIN start $NEXT_BIN --name "pichub" -- start
+            $PM2_BIN save

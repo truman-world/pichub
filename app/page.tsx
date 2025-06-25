@@ -1,70 +1,65 @@
-// app/page.tsx
-"use client"
-
+import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import prisma from '@/lib/prisma';
 import { Button } from '@/components/ui/button';
-import { UploadZone } from '@/components/upload/upload-zone';
-import { useAuth } from '@/hooks/use-auth';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 
-export default function HomePage() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
-
-  // 当用户信息加载完毕后，如果用户已登录，则自动跳转到仪表板
-  useEffect(() => {
-    if (!loading && user) {
-      router.push('/dashboard');
+/**
+ * 主页组件
+ * - 检查应用是否已初始化（通过检查用户数量）
+ * - 如果未初始化，则重定向到安装页面
+ * - 如果已初始化，则显示公共主页内容
+ */
+export default async function HomePage() {
+  try {
+    const userCount = await prisma.user.count();
+    if (userCount === 0) {
+      redirect('/setup');
     }
-  }, [user, loading, router]);
-
-  // 如果正在加载或用户已登录，可以显示一个加载状态或直接不渲染任何内容
-  if (loading || user) {
+  } catch (error) {
+    // 数据库连接失败等情况
     return (
-      <div className="flex h-screen items-center justify-center">
-        <p className="text-muted-foreground">正在加载...</p>
-      </div>
-    );
+        <div className="flex items-center justify-center min-h-screen bg-red-50">
+            <div className="text-center p-8 bg-white rounded-lg shadow-md">
+                <h1 className="text-2xl font-bold text-red-600 mb-4">数据库连接错误</h1>
+                <p className="text-gray-700">无法连接到数据库。请检查您的 `.env.local` 文件中的 `DATABASE_URL` 配置是否正确，并确保数据库服务正在运行。</p>
+            </div>
+        </div>
+    )
   }
 
-  // 只在用户未登录时显示主页内容
   return (
-    <div className="min-h-screen bg-background">
-      <header className="absolute top-0 left-0 right-0 p-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold">PicHub</h1>
-          <nav className="space-x-4">
-            <Button asChild variant="ghost">
+    <main className="flex flex-col items-center justify-center min-h-screen p-8 bg-gray-50 dark:bg-gray-900">
+      <Card className="w-full max-w-md text-center">
+        <CardHeader>
+          <CardTitle className="text-4xl font-bold">欢迎来到 PicHub</CardTitle>
+          <CardDescription className="text-lg text-gray-600 dark:text-gray-300 mt-2">
+            一个现代化的图床解决方案。
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-6">
+            轻松上传、管理和分享您的图片。
+          </p>
+          <div className="flex justify-center gap-4">
+            <Button asChild>
               <Link href="/login">登录</Link>
             </Button>
-            <Button asChild>
+            <Button asChild variant="secondary">
               <Link href="/register">注册</Link>
             </Button>
-          </nav>
-        </div>
-      </header>
-
-      <main className="container mx-auto flex min-h-screen flex-col items-center justify-center p-8 pt-20">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl md:text-6xl font-extrabold tracking-tight">
-            现代化、可自托管的图床解决方案
-          </h2>
-          <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
-            点击或拖拽上传图片，支持 JPG、JPEG、PNG、GIF、WebP 等格式。您也可以直接 `Ctrl+V` 粘贴剪贴板中的图片。
-          </p>
-        </div>
-        
-        <div className="w-full max-w-2xl">
-          <UploadZone />
-        </div>
-      </main>
-
-      <footer className="text-center p-4 text-sm text-muted-foreground">
-        <p>
-          由 <a href="https://github.com/truman-world/pichub" target="_blank" rel="noopener noreferrer" className="underline">PicHub</a> 强力驱动. 基于 MIT 协议开源.
-        </p>
+          </div>
+        </CardContent>
+      </Card>
+      <footer className="mt-8 text-sm text-gray-500">
+        <p>&copy; {new Date().getFullYear()} PicHub. All rights reserved.</p>
       </footer>
-    </div>
+    </main>
   );
 }

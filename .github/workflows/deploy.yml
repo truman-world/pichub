@@ -68,25 +68,28 @@ jobs:
           script: |
             cd /www/wwwroot/8.148.7.13
             
-            # 明确指定 Node.js 的路径，并将其加入到本次会话的环境变量中
+            # 明确指定 Node.js 的路径
             export PATH=/www/server/nodejs/v18.20.8/bin:$PATH
 
             # --- 关键修复：在安装依赖前，强制清理 NPM 缓存 ---
             npm cache clean --force
             echo "✅ npm cache cleaned."
             
-            # 安装生产依赖 (现在会包含 prisma)
+            # 安装生产依赖
             npm install --production
             
-            # 在服务器上生成 Prisma Client
-            npx prisma generate
-            
-            # 直接在服务器上创建 .env.local 文件
+            # --- 核心逻辑修复：先创建 .env.local 文件 ---
             echo "DATABASE_URL='${{ secrets.DATABASE_URL }}'" > .env.local
             echo "JWT_SECRET='${{ secrets.JWT_SECRET }}'" >> .env.local
             echo "NEXTAUTH_URL='${{ secrets.NEXTAUTH_URL }}'" >> .env.local
             echo "✅ Runtime .env.local file created."
-
+            
+            # --- 核心逻辑修复：然后再生成 Prisma Client ---
+            # 现在，这个命令可以读取到 .env.local 中的 DATABASE_URL
+            npx prisma generate
+            echo "✅ Prisma Client generated on server."
+            
+            # 使用 PM2 启动或重启应用
             PM2_BIN=/www/server/nodejs/v18.20.8/bin/pm2
             NEXT_BIN=./node_modules/.bin/next
 

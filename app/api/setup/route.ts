@@ -35,9 +35,11 @@ export async function POST(req: NextRequest) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // 关键改动：添加了email字段以满足数据库模型要求
     await prisma.user.create({
       data: {
         username,
+        email: `${username}@example.com`, // 使用虚拟邮箱
         password: hashedPassword,
         role: Role.ADMIN,
       },

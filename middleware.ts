@@ -4,13 +4,13 @@ import type { NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
   // 从 cookie 中获取我们自己的认证 token
-  const token = request.cookies.get('auth-token');
-
+  const token = request.cookies.get('auth-token'); 
   const { pathname } = request.nextUrl;
 
   // 如果用户未登录（没有token）且想访问仪表板，重定向到登录页
   if (!token && pathname.startsWith('/dashboard')) {
     const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('redirect', pathname); // 可选：告诉登录页成功后跳回哪里
     return NextResponse.redirect(loginUrl);
   }
 
@@ -20,11 +20,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(dashboardUrl);
   }
 
-  // 其他情况放行
+  // 其他情况（如访问主页）放行
   return NextResponse.next();
 }
 
 // 定义需要被中间件保护的路径
 export const config = {
-  matcher: ['/dashboard/:path*', '/login', '/register'],
+  matcher: [
+    '/dashboard/:path*', // 保护所有仪表板下的页面
+    '/login',            // 在已登录时重定向
+    '/register',         // 在已登录时重定向
+  ],
 };

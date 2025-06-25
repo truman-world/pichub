@@ -1,135 +1,122 @@
-// app/(auth)/login/page.tsx
-"use client"
+'use client';
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import * as z from 'zod'
-import { Loader2, ImageIcon } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { useToast } from '@/components/ui/use-toast'
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/ui/use-toast';
+import Link from 'next/link';
 
-// --- 修改：登录验证现在接受邮箱或普通字符串 ---
-const loginSchema = z.object({
-  identifier: z.string().min(1, '请输入您的邮箱或用户名'),
-  password: z.string().min(1, '请输入密码'),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
-
+/**
+ * 登录页面
+ * - 处理用户登录表单
+ * - 调用登录API
+ * - 成功后根据用户角色重定向
+ */
 export default function LoginPage() {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  
-  const {
-    register,
-    handleSubmit,
-    formState: { errors }
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema)
-  });
 
-  const onSubmit = async (data: LoginFormData) => {
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || '登录失败');
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || '用户名或密码错误');
+      }
+      
+      toast({
+        title: '登录成功',
+        description: '欢迎回来!',
+      });
+
+      // 刷新页面以确保认证状态在客户端和服务端同步
+      router.refresh();
+
+      // 根据角色进行跳转
+      if (data.user.role === 'ADMIN') {
+        router.push('/dashboard');
+      } else {
+        router.push('/dashboard/gallery');
       }
 
-      toast({
-        title: "登录成功",
-        description: "欢迎回来！"
-      });
-      
-      router.push('/dashboard');
-      router.refresh(); 
     } catch (error: any) {
       toast({
-        title: "登录失败",
-        description: "请检查您的账号和密码。", // 使用更通用的提示
-        variant: "destructive"
+        title: '登录失败',
+        description: error.message,
+        variant: 'destructive',
       });
-    } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/50">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="h-12 w-12 bg-primary rounded-lg flex items-center justify-center">
-              <ImageIcon className="h-8 w-8 text-primary-foreground" />
-            </div>
-          </div>
-          <CardTitle className="text-2xl">欢迎回来</CardTitle>
+    <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
+      <Card className="mx-auto max-w-sm w-full">
+        <CardHeader>
+          <CardTitle className="text-2xl">登录</CardTitle>
           <CardDescription>
-            登录您的账号以继续
+            输入您的用户名以登录您的账户
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              {/* --- 修改：这里的标签和输入框现在更通用 --- */}
-              <Label htmlFor="identifier">邮箱 / 用户名</Label>
-              <Input
-                id="identifier"
-                type="text"
-                placeholder="name@example.com 或您的用户名"
-                {...register('identifier')}
-                disabled={isLoading}
-              />
-              {errors.identifier && (
-                <p className="text-sm text-destructive">{errors.identifier.message}</p>
-              )}
+        <CardContent>
+          <form onSubmit={handleLogin}>
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="username">用户名</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="admin"
+                  required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="password">密码</Label>
+                <Input 
+                  id="password" 
+                  type="password" 
+                  required 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? '登录中...' : '登录'}
+              </Button>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">密码</Label>
-              <Input
-                id="password"
-                type="password"
-                {...register('password')}
-                disabled={isLoading}
-              />
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
-              )}
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <Button 
-              type="submit" 
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              登录
-            </Button>
-            <p className="text-sm text-muted-foreground text-center">
-              还没有账号？{' '}
-              <Link href="/register" className="text-primary hover:underline">
-                立即注册
-              </Link>
-            </p>
-          </CardFooter>
-        </form>
+          </form>
+          <div className="mt-4 text-center text-sm">
+            还没有账户?{' '}
+            <Link href="/register" className="underline">
+              注册
+            </Link>
+          </div>
+        </CardContent>
       </Card>
     </div>
-  )
+  );
 }

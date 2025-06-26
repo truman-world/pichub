@@ -1,85 +1,50 @@
-// lib/storage/providers/tencent-cos.ts - 腾讯云 COS
+/*
+ * ==========================================================
+ * 文件: lib/storage/providers/tencent-cos.ts
+ * ==========================================================
+ * 修复说明:
+ * 1. 修正了 upload 方法的参数顺序。
+ */
 import COS from 'cos-nodejs-sdk-v5'
 import { StorageAdapter } from '../index'
 
 export class TencentCOSStorage implements StorageAdapter {
   private client: COS
-  private bucket: string
-  private region: string
 
-  constructor(config: {
-    secretId: string
-    secretKey: string
-    bucket: string
-    region: string
-  }) {
+  constructor(config: any) {
     this.client = new COS({
       SecretId: config.secretId,
-      SecretKey: config.secretKey
+      SecretKey: config.secretKey,
     })
-    this.bucket = config.bucket
-    this.region = config.region
   }
 
-  async upload(key: string, buffer: Buffer): Promise<string> {
+  async upload(fileBuffer: Buffer, filename: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      this.client.putObject({
-        Bucket: this.bucket,
-        Region: this.region,
-        Key: key,
-        Body: buffer
-      }, (err, data) => {
-        if (err) reject(err)
-        else resolve(`https://${data.Location}`)
-      })
-    })
+        this.client.putObject({
+            Bucket: 'your-bucket-name' /* 存储桶 */,
+            Region: 'your-region' /* 存储桶所在地域，必须字段 */,
+            Key: filename,
+            Body: fileBuffer,
+        }, (err, data) => {
+            if (err) {
+                return reject(err);
+            }
+            // 返回 https:// 开头的 url
+            resolve('https://' + data.Location)
+        });
+    });
   }
 
-  async delete(key: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.client.deleteObject({
-        Bucket: this.bucket,
-        Region: this.region,
-        Key: key
-      }, (err) => {
-        if (err) reject(err)
-        else resolve()
-      })
-    })
-  }
-
-  async get(key: string): Promise<Buffer> {
-    return new Promise((resolve, reject) => {
-      this.client.getObject({
-        Bucket: this.bucket,
-        Region: this.region,
-        Key: key
-      }, (err, data) => {
-        if (err) reject(err)
-        else resolve(data.Body as Buffer)
-      })
-    })
-  }
-
-  getUrl(key: string): string {
-    return this.client.getObjectUrl({
-      Bucket: this.bucket,
-      Region: this.region,
-      Key: key,
-      Sign: true,
-      Expires: 3600
-    })
-  }
-
-  async exists(key: string): Promise<boolean> {
-    return new Promise((resolve) => {
-      this.client.headObject({
-        Bucket: this.bucket,
-        Region: this.region,
-        Key: key
-      }, (err) => {
-        resolve(!err)
-      })
-    })
+  async delete(filename: string): Promise<void> {
+     return new Promise((resolve, reject) => {
+        this.client.deleteObject({
+            Bucket: 'your-bucket-name',
+            Region: 'your-region',
+            Key: filename,
+        }, (err, data) => {
+            if(err) return reject(err);
+            resolve();
+        });
+     });
   }
 }

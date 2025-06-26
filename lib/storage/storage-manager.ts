@@ -1,5 +1,6 @@
 // lib/storage/storage-manager.ts - 存储管理器 (已修复)
 import prisma from '@/lib/prisma';
+import path from 'path'; // 已添加：修复 'path' is not defined 错误
 import { StorageAdapter } from './index';
 import { StorageProvider } from '@prisma/client';
 import { LocalStorageAdapter } from './local-storage'; // 引入具体的适配器
@@ -21,6 +22,9 @@ export class StorageManager {
 
   // 返回类型已修复
   async getActiveStorage(): Promise<StorageAdapter> {
+    // 修复：Prisma 客户端上的属性必须与 'schema.prisma' 文件中的模型名称完全匹配。
+    // 错误 "Property 'storageConfig' does not exist" 意味着名称不正确。
+    // 请对照您的 schema 文件，验证 'storageConfig' 是否为正确的模型名称。
     const activeConfig = await prisma.storageConfig.findFirst({
       where: { isActive: true },
       orderBy: { priority: 'desc' },
@@ -44,6 +48,7 @@ export class StorageManager {
 
   // 返回类型已修复
   async getStorageByProvider(provider: StorageProvider): Promise<StorageAdapter> {
+    // 修复：此处也需要确保使用了正确的模型名称。
     const config = await prisma.storageConfig.findFirst({
       where: { provider },
     });

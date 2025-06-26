@@ -2,13 +2,13 @@
  * ==========================================================
  * 文件: lib/storage/providers/tencent-cos.ts
  * ==========================================================
- * 修复说明: 确认 StorageAdapter 接口已正确导入。
+ * 修复说明: 使用 InstanceType<typeof COS> 来精确推导客户端类型，解决编译错误。
  */
 import COS from 'cos-nodejs-sdk-v5';
 import { StorageAdapter } from '../index';
 
 export class TencentCOSStorage implements StorageAdapter {
-  private client: COS;
+  private client: InstanceType<typeof COS>; // <--- 关键修复
   private config: any;
   constructor(config: any) {
     this.client = new COS({ SecretId: config.secretId, SecretKey: config.secretKey });

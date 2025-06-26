@@ -2,10 +2,12 @@
  * ==========================================================
  * 文件: lib/storage/providers/local.ts
  * ==========================================================
- * 修复说明: 修正了 upload 方法的参数顺序。
+ * 修复说明: 添加了缺失的 `import { StorageAdapter } from '../index';`
  */
 import { writeFile, mkdir, unlink } from 'fs/promises';
 import { join } from 'path';
+import { StorageAdapter } from '../index'; // <--- 关键修复
+
 export class LocalStorage implements StorageAdapter {
   private uploadDir: string;
   private baseUrl: string;

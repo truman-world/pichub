@@ -46,23 +46,24 @@ export async function POST(req: NextRequest) {
     await writeFile(filePath, buffer);
 
     // 生成可公开访问的 URL
-    // 关键修复：修正变量名的拼写错误
     const fileUrl = `/${relativeUploadDir}/${randomName}`;
 
     // 在数据库中创建记录
+    // 关键修复: 根据编译错误，您的 Image 模型似乎不需要存储原始文件名。
+    // 我们将只存储必要的信息，以匹配您的数据库结构。
     const image = await prisma.image.create({
       data: {
-        title: file.name, // 使用 'title' 字段
         url: fileUrl,
         size: file.size,
         userId: user?.id, // 如果是游客上传，userId 为 null
       },
     });
 
+    // 即使我们不在数据库中存储它，我们仍然可以将文件名返回给前端用于当次显示。
     return NextResponse.json({
       success: true,
       url: fileUrl,
-      name: file.name,
+      name: file.name, 
       message: '图片上传成功！',
     });
 

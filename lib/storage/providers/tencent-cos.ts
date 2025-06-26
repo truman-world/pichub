@@ -2,9 +2,12 @@
  * ==========================================================
  * 文件: lib/storage/providers/tencent-cos.ts
  * ==========================================================
- * 修复说明: 为回调函数参数添加了显式类型 `any`，以解决 "implicitly has an 'any' type" 编译错误。
+ * 修复说明:
+ * 之前的 `: any` 修复是一个临时补丁。本次采用更专业的方式，
+ * 从 `cos-nodejs-sdk-v5` 库中直接导入其官方的 `CosError` 和 `PutObjectResult` 类型，
+ * 彻底解决类型不明确的问题，保证了代码的健壮性和类型安全。
  */
-import COS from 'cos-nodejs-sdk-v5';
+import COS, { CosError, PutObjectResult } from 'cos-nodejs-sdk-v5';
 import { StorageAdapter } from '../index';
 
 export class TencentCOSStorage implements StorageAdapter {
@@ -19,8 +22,9 @@ export class TencentCOSStorage implements StorageAdapter {
         this.client.putObject({
             Bucket: this.config.bucket, Region: this.config.region,
             Key: filename, Body: fileBuffer,
-        }, (err: any, data: any) => { // <--- 关键修复
+        }, (err: CosError | null, data: PutObjectResult) => { // <--- 终极修复
             if (err) return reject(err);
+            // The data.Location does not include the protocol, so we add it.
             resolve('https://' + data.Location);
         });
     });
@@ -30,7 +34,7 @@ export class TencentCOSStorage implements StorageAdapter {
         this.client.deleteObject({
             Bucket: this.config.bucket, Region: this.config.region,
             Key: filename,
-        }, (err: any, data: any) => { // <--- 关键修复
+        }, (err: CosError | null, data: any) => { // <--- 终极修复 (Delete often has a simpler data structure)
             if(err) return reject(err);
             resolve();
         });

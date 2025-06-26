@@ -1,8 +1,6 @@
 // lib/auth.ts
-import { jwtVerify, SignJWT } from 'jose';
-import { cookies } from 'next/headers';
+import { jwtVerify } from 'jose';
 import type { NextApiRequest, NextPageContext } from 'next';
-import prisma from './prisma';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET as string);
 const COOKIE_NAME = 'pichub_session';
@@ -13,35 +11,6 @@ interface UserPayload {
     role: 'ADMIN' | 'USER';
     iat?: number;
     exp?: number;
-}
-
-/**
- * For App Router (Server Components).
- * Uses `next/headers` to get cookies.
- * This is the function your dashboard layout needs.
- */
-export async function getAuth() {
-  const token = cookies().get(COOKIE_NAME)?.value;
-
-  if (!token) {
-    return null;
-  }
-
-  try {
-    const { payload } = await jwtVerify<UserPayload>(token, JWT_SECRET);
-    
-    // Optional: Fetch the latest user data from the DB to ensure they still exist/are valid
-    const user = await prisma.user.findUnique({
-      where: { id: payload.userId },
-      select: { id: true, username: true, email: true, role: true }
-    });
-    
-    return user;
-
-  } catch (e) {
-    console.error("JWT Verification failed in getAuth:", e);
-    return null;
-  }
 }
 
 /**

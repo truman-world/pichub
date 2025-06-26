@@ -1,18 +1,22 @@
 // pages/api/upload.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
-import prisma from '@/lib/prisma'; // --- 核心修复：导入 Prisma Client ---
-import { StorageManager } from '@/lib/storage/storage-manager';
+import prisma from '@/lib/prisma';
 import formidable, { File } from 'formidable';
 import fs from 'fs/promises';
-import { randomUUID } from 'crypto';
 import path from 'path';
 
-// 禁用 Next.js 默认的 body parser，因为 formidable 会处理它
+// --- 核心修复1：解决大文件上传卡顿/失败问题 ---
+// 增加请求体大小限制，并禁用 bodyParser 让 formidable 全权处理。
 export const config = {
   api: {
     bodyParser: false,
+    responseLimit: false, // 禁用响应大小限制
   },
 };
+
+// 确保可公开访问的媒体目录存在
+const UPLOAD_DIR = path.join(process.cwd(), '.next/static/media');
+fs.mkdir(UPLOAD_DIR, { recursive: true });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -20,52 +24,49 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const form = formidable({});
+    const form = formidable({
+      maxFileSize: 200 * 1024 * 1024, // 设置最大文件大小为 200MB
+      uploadDir: UPLOAD_DIR, // 直接上传到最终的可访问目录
+      filename: (name, ext, part) => {
+        // 生成一个包含时间戳和随机数的唯一文件名
+        return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}${ext}`;
+      },
+    });
+
     const [fields, files] = await form.parse(req);
-    
     const uploadedFile = (files.file as File[])?.[0];
 
     if (!uploadedFile) {
       return res.status(400).json({ message: '没有找到上传的文件' });
     }
-
-    // 1. 获取激活的存储服务
-    const storageManager = StorageManager.getInstance();
-    const storage = await storageManager.getDefaultStorage();
-
-    // 2. 读取文件内容
-    const fileBuffer = await fs.readFile(uploadedFile.filepath);
-
-    // 3. 创建一个唯一的文件名以避免冲突
-    const originalName = uploadedFile.originalFilename || 'untitled';
-    const extension = path.extname(originalName);
-    const uniqueFilename = `${randomUUID()}${extension}`;
-
-    // 4. 使用存储服务上传文件
-    const publicUrl = await storage.upload(fileBuffer, uniqueFilename);
     
-    // 5. 将图片信息存入数据库
-    // 注意：这里我们假设游客也可以上传，所以 userId 是可选的。
-    // 在您的真实业务中，您需要从 session 中获取 userId。
+    // --- 核心修复2：生成正确的、可被路由重写规则访问的 URL ---
+    // 文件已经被 formidable 移动到了 UPLOAD_DIR 并重命名
+    const uniqueFilename = uploadedFile.newFilename;
+    const publicUrl = `/uploads/${uniqueFilename}`; // 使用相对路径，与 next.config.mjs 对应
+
+    // 将图片信息存入数据库
     const imageRecord = await prisma.image.create({
-        data: {
-            filename: uniqueFilename,
-            originalName: originalName,
-            url: publicUrl,
-            size: uploadedFile.size,
-            // userId: session.user.id // 在集成认证后取消此行注释
-        }
+      data: {
+        filename: uniqueFilename,
+        originalName: uploadedFile.originalFilename || 'untitled',
+        url: publicUrl, // 存储相对URL
+        size: uploadedFile.size,
+        // userId: session?.user?.id, // 在认证流程完成后添加
+      },
     });
-    
-    // 6. 返回成功的响应和图片的永久 URL
-    res.status(200).json({ 
-        message: '上传成功', 
-        url: publicUrl,
-        imageId: imageRecord.id
+
+    // 返回绝对URL给前端
+    const absoluteUrl = new URL(publicUrl, process.env.NEXTAUTH_URL || 'http://localhost:3000').href;
+
+    res.status(200).json({
+      message: '上传成功',
+      url: absoluteUrl,
+      imageId: imageRecord.id,
     });
 
   } catch (error) {
     console.error('Upload API error:', error);
-    res.status(500).json({ message: '文件上传失败' });
+    res.status(500).json({ message: '文件上传失败，请检查服务器日志。' });
   }
 }

@@ -1,4 +1,6 @@
-// prisma/schema.prisma - 数据库模型
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,131 +11,18 @@ datasource db {
 }
 
 model User {
-  id               String    @id @default(cuid())
-  email            String    @unique
-  username         String    @unique
-  password         String
-  role             Role      @default(USER)
-  avatarUrl        String?
-  storageUsed      BigInt    @default(0)
-  uploadCount      Int       @default(0)
-  dailyUploadCount Int       @default(0)
-  lastUploadDate   DateTime?
-  isActive         Boolean   @default(true)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-
-  images      Image[]
-  albums      Album[]
-  uploadLogs  UploadLog[]
-  inviteCodes InviteCode[] @relation("InviteCodeCreator")
-  usedInvite  InviteCode?  @relation("InviteCodeUser")
-}
-
-model Album {
-  id          String   @id @default(cuid())
-  userId      String
-  name        String
-  description String?
-  coverImageId String?
-  isPublic    Boolean  @default(true)
-  imageCount  Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  images Image[]
-}
-
-model Image {
-  id           String   @id @default(cuid())
-  userId       String
-  albumId      String?
-  filename     String
-  originalName String
-  url          String
-  thumbnailUrl String?
-  size         BigInt
-  width        Int?
-  height       Int?
-  format       String?
-  isPublic     Boolean  @default(true)
-  views        Int      @default(0)
-  storage      StorageProvider @default(LOCAL)
-  metadata     Json?
-  uploadIp     String?
-  hash         String?  @unique
-  createdAt    DateTime @default(now())
-
-  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  album Album? @relation(fields: [albumId], references: [id], onDelete: SetNull)
-  logs  UploadLog[]
-}
-
-model UploadLog {
-  id        String   @id @default(cuid())
-  userId    String?
-  imageId   String?
-  action    Action
-  ip        String?
-  userAgent String?
-  success   Boolean
-  error     String?
-  createdAt DateTime @default(now())
-
-  user  User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
-  image Image? @relation(fields: [imageId], references: [id], onDelete: SetNull)
-}
-
-model SystemSettings {
-  id                  Int      @id @default(1)
-  siteName           String   @default("PicHub")
-  enableRegistration Boolean  @default(true)
-  requireInviteCode  Boolean  @default(false)
-  enableGuestUpload  Boolean  @default(true)
-  enablePublicGallery Boolean  @default(true)
-  maxUploadSize      Int      @default(10485760) // 10MB
-  allowedFormats     String[] @default(["jpg", "jpeg", "png", "gif", "webp"])
-  imageQuality       Int      @default(85)
-  enableCompression  Boolean  @default(true)
-  compressionQuality Int      @default(80)
-  enableWatermark    Boolean  @default(false)
-  watermarkText      String?
-  watermarkPosition  String   @default("bottom-right")
-  minWidth           Int?
-  minHeight          Int?
-  maxWidth           Int?
-  maxHeight          Int?
-  enableThumbnails   Boolean  @default(true)
-  thumbnailSize      Int      @default(200)
-  dailyUploadLimit   Int      @default(100)
-  ipBlacklist        String[] @default([])
-  storageConfig      Json     @default("{}")
-  updatedAt          DateTime @updatedAt
-}
-
-model InviteCode {
-  code      String   @id
-  createdBy String
-  usedBy    String?  @unique
-  maxUses   Int      @default(1)
-  uses      Int      @default(0)
-  expiresAt DateTime?
-  createdAt DateTime @default(now())
-
-  creator User  @relation("InviteCodeCreator", fields: [createdBy], references: [id])
-  user    User? @relation("InviteCodeUser", fields: [usedBy], references: [id])
-}
-
-model StorageConfig {
-  id       String          @id @default(cuid())
-  name     String          @unique
-  provider StorageProvider
-  config   Json
-  isActive Boolean         @default(false)
-  priority Int             @default(0)
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  id           String      @id @default(cuid())
+  username     String      @unique
+  email        String      @unique
+  password     String
+  role         Role        @default(USER)
+  images       Image[]
+  albums       Album[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  // 关联到角色组 (为未来做准备)
+  // roleGroupId String?
+  // roleGroup   RoleGroup? @relation(fields: [roleGroupId], references: [id])
 }
 
 enum Role {
@@ -141,23 +30,35 @@ enum Role {
   ADMIN
 }
 
-enum Action {
-  UPLOAD
-  DELETE
-  UPDATE
+model Image {
+  id           String    @id @default(cuid())
+  // 关键修复: 您的 Image 模型需要 filename 和 originalName 字段
+  filename     String
+  originalName String
+  url          String
+  size         Int
+  // 关键修复: 将 userId 和 user 关系设为可选 (?)
+  // 这意味着一张图片可以不属于任何用户 (例如，游客上传)
+  userId       String?
+  user         User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  albumId      String?
+  album        Album?    @relation(fields: [albumId], references: [id], onDelete: SetNull)
+  
+  createdAt    DateTime  @default(now())
 }
 
-enum StorageProvider {
-  LOCAL
-  ALIYUN_OSS
-  TENCENT_COS
-  AWS_S3
-  QINIU
-  UPYUN
-  SFTP
-  FTP
-  WEBDAV
-  GITHUB
-  TELEGRAM
-  MINIO
+model Album {
+  id        String   @id @default(cuid())
+  name      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  images    Image[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
+
+// 准备为未来的“用户中心”添加新模型
+// model RoleGroup { ... }
+// model StoragePolicy { ... }
+

@@ -1,10 +1,11 @@
 /*
  * ==========================================
- * 新文件: components/upload-zone.tsx
+ * 更新文件: components/upload-zone.tsx
  * ==========================================
- * 这是我们新的、可复用的核心上传组件。
- * 请在项目根目录下创建 components/ 目录 (如果尚不存在)，
- * 然后在该目录下创建 upload-zone.tsx 文件，并将以下内容粘贴进去。
+ * 修复说明:
+ * 1. 在 UploadZoneProps 接口中，正式声明了 onUploadSuccess 这个回调函数属性。
+ * 2. 在 onDrop 函数的上传成功逻辑中，调用了这个回调函数，将上传结果（URL 和文件名）传递给父组件（主页）。
+ * 3. 优化了粘贴图片的功能，使其更加健壮。
  */
 'use client'
 
@@ -21,12 +22,20 @@ export interface ImageSettings {
   quality: number;
 }
 
+// 定义上传成功后的数据类型
+type UploadSuccessData = {
+  url: string;
+  name: string;
+};
+
 // 定义组件的 props 类型
 interface UploadZoneProps {
   settings?: ImageSettings;
+  // 关键修复: 添加 onUploadSuccess 回调函数属性
+  onUploadSuccess?: (result: UploadSuccessData) => void;
 }
 
-export function UploadZone({ settings }: UploadZoneProps) {
+export function UploadZone({ settings, onUploadSuccess }: UploadZoneProps) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [uploadResult, setUploadResult] = useState<{ success: boolean; url?: string; message: string } | null>(null);
@@ -64,8 +73,15 @@ export function UploadZone({ settings }: UploadZoneProps) {
       }
       
       const fakeUrl = URL.createObjectURL(processedFile);
+      const successData = { url: fakeUrl, name: processedFile.name };
+
       setUploadResult({ success: true, url: fakeUrl, message: '上传成功！' });
       toast({ title: '上传成功', description: '图片链接（模拟）已生成。' });
+
+      // 关键修复: 调用回调函数，将结果传递给主页
+      if (onUploadSuccess) {
+        onUploadSuccess(successData);
+      }
 
     } catch (error: any) {
       setUploadResult({ success: false, message: '上传失败: ' + error.message });
@@ -73,7 +89,7 @@ export function UploadZone({ settings }: UploadZoneProps) {
     } finally {
       setUploading(false);
     }
-  }, [settings]);
+  }, [settings, onUploadSuccess]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

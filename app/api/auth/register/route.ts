@@ -1,56 +1,48 @@
-// app/api/auth/register/route.ts
-import { NextResponse } from 'next/server';
+/*
+ * =================================================
+ * 更新文件: app/api/auth/register/route.ts
+ * =================================================
+ * 修复说明:
+ * 1. 增加了对所有必填字段 (username, email, password) 的严格服务器端校验。
+ * 2. 无论发生任何错误，都返回一个结构统一、信息明确的 JSON 错误响应，彻底解决 "Unexpected token 'M'" 的问题。
+ * 3. 优化了错误提示，使其对用户更友好、更具体。
+ */
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import bcrypt from 'bcryptjs';
-import { Role } from '@prisma/client'; // 引入 Role 枚举
+import bcrypt from 'bcrypt';
+import { Role } from '@prisma/client';
 
-// 自定义一个 JSON 序列化函数，用来处理 BigInt
-function stringify(obj: any) {
-  return JSON.stringify(
-    obj,
-    (key, value) => (typeof value === 'bigint' ? value.toString() : value)
-  );
-}
-
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const { email, username, password } = await request.json();
+    const { username, email, password } = await req.json();
 
-    if (!email || !username || !password) {
-      return new NextResponse('Missing fields', { status: 400 });
+    if (!username || !email || !password) {
+      return NextResponse.json({ message: '用户名、邮箱和密码均为必填项。' }, { status: 400 });
+    }
+    if (password.length < 6) {
+      return NextResponse.json({ message: '密码长度不能少于6位。' }, { status: 400 });
     }
 
     const existingUser = await prisma.user.findFirst({
-      where: { OR: [{ email }, { username }] },
+      where: { OR: [{ username }, { email }] },
     });
 
     if (existingUser) {
-      // 明确返回 409 状态码，表示冲突
-      return new NextResponse('User already exists', { status: 409 });
+      const message = existingUser.username === username ? '抱歉，该用户名已被占用。' : '抱歉，该邮箱已被注册。';
+      return NextResponse.json({ message }, { status: 409 });
     }
 
-    // --- 关键修改：检查是否是第一个用户 ---
+    const hashedPassword = await bcrypt.hash(password, 10);
     const userCount = await prisma.user.count();
     const role = userCount === 0 ? Role.ADMIN : Role.USER;
 
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    const user = await prisma.user.create({
-      data: {
-        email,
-        username,
-        password: hashedPassword,
-        role, // 在创建时设置角色
-      },
-    });
-    
-    return new Response(stringify(user), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
+    await prisma.user.create({
+      data: { username, email, password: hashedPassword, role },
     });
 
+    return NextResponse.json({ message: '注册成功！现在将跳转到登录页面。' }, { status: 201 });
   } catch (error) {
-    console.error('[REGISTER_ERROR]', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    console.error('[API_REGISTER_ERROR]', error);
+    return NextResponse.json({ message: '服务器内部发生错误，请稍后重试。' }, { status: 500 });
   }
 }

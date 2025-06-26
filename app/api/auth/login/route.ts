@@ -1,73 +1,68 @@
-// app/api/auth/login/route.ts
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { cookies } from 'next/headers';
+import bcrypt from 'bcrypt';
+import * as jose from 'jose';
 
-// 自定义一个 JSON 序列化函数，用来处理 BigInt
-function stringify(obj: any) {
-  return JSON.stringify(
-    obj,
-    (key, value) => (typeof value === 'bigint' ? value.toString() : value)
-  );
-}
-
-export async function POST(request: Request) {
+// --- 关键改进：极其健壮的错误处理和日志记录 ---
+export async function POST(req: NextRequest) {
   try {
-    // 我们现在接受一个通用的 identifier
-    const { identifier, password } = await request.json();
+    const { username, password } = await req.json();
 
-    if (!identifier || !password) {
-      return new NextResponse('Missing identifier or password', { status: 400 });
+    if (!username || !password) {
+      return NextResponse.json({ message: '用户名和密码不能为空。' }, { status: 400 });
     }
 
-    // 同时通过邮箱或用户名查找用户
-    const user = await prisma.user.findFirst({
+    const user = await prisma.user.findUnique({
       where: {
-        OR: [
-          { email: identifier },
-          { username: identifier },
-        ],
+        username: username,
       },
     });
 
-    // 如果找不到用户，或者密码不正确，都返回相同的错误信息，防止信息泄露
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return new NextResponse('Invalid credentials', { status: 401 });
+    if (!user) {
+      // 为了安全，不提示“用户不存在”，而是返回一个通用的失败信息
+      return NextResponse.json({ message: '用户名或密码无效。' }, { status: 401 });
     }
 
-    const JWT_SECRET = process.env.JWT_SECRET;
-    if (!JWT_SECRET) {
-      throw new Error("JWT_SECRET is not defined in environment variables");
+    const passwordMatch = await bcrypt.compare(password, user.password);
+
+    if (!passwordMatch) {
+      return NextResponse.json({ message: '用户名或密码无效。' }, { status: 401 });
     }
+    
+    if (!process.env.JWT_SECRET) {
+      console.error("[API_LOGIN_ERROR] JWT_SECRET is not defined in environment variables!");
+      throw new Error("服务器配置错误：JWT_SECRET 未设置。");
+    }
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
 
-    // 生成 JWT (JSON Web Token)
-    const token = jwt.sign(
-      { userId: user.id, email: user.email, username: user.username, role: user.role },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    const token = await new jose.SignJWT({ id: user.id, role: user.role })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('1d')
+      .sign(secret);
 
-    // 将 Token 安全地存入 httpOnly cookie
-    cookies().set('auth-token', token, {
+    const response = NextResponse.json({ 
+      message: '登录成功', 
+      user: { id: user.id, username: user.username, role: user.role } 
+    });
+
+    response.cookies.set('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24 * 7,
       path: '/',
-      sameSite: 'lax',
+      maxAge: 60 * 60 * 24, // 1 day
     });
 
-    const { password: _, ...userWithoutPassword } = user;
-    
-    // 使用自定义 stringify 函数来处理 BigInt
-    return new Response(stringify(userWithoutPassword), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return response;
 
-  } catch (error) {
-    console.error('[LOGIN_ERROR]', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+  } catch (error: any) {
+    // --- 这里会捕获任何可能的错误，包括数据库连接错误 ---
+    console.error("[API_LOGIN_ERROR] An unexpected error occurred:", error);
+
+    // --- 确保总是返回一个有效的 JSON，防止客户端崩溃 ---
+    return NextResponse.json(
+      { message: `服务器内部错误，请联系管理员。` },
+      { status: 500 }
+    );
   }
 }

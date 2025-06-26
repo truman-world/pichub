@@ -1,5 +1,6 @@
 // pages/api/upload.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
+import prisma from '@/lib/prisma'; // --- 核心修复：导入 Prisma Client ---
 import { StorageManager } from '@/lib/storage/storage-manager';
 import formidable, { File } from 'formidable';
 import fs from 'fs/promises';
@@ -30,7 +31,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // 1. 获取激活的存储服务
     const storageManager = StorageManager.getInstance();
-    // 这里我们用 getDefaultStorage, 您也可以根据业务逻辑换成 getActiveStorage
     const storage = await storageManager.getDefaultStorage();
 
     // 2. 读取文件内容

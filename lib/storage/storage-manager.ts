@@ -1,16 +1,12 @@
-// lib/storage/storage-manager.ts - 存储管理器 (已修复)
+// lib/storage/storage-manager.ts - 存储管理器 (最终修正版)
 import prisma from '@/lib/prisma';
-import path from 'path'; // 已添加：修复 'path' is not defined 错误
+import path from 'path';
 import { StorageAdapter } from './index';
 import { StorageProvider } from '@prisma/client';
-import { LocalStorageAdapter } from './local-storage'; // 引入具体的适配器
-
-// 如果您有其他存储方式，也在这里引入
-// import { S3StorageAdapter } from './s3-storage';
+import { LocalStorageAdapter } from './local-storage';
 
 export class StorageManager {
   private static instance: StorageManager;
-  // 类型已正确修改为 StorageAdapter
   private storageServices: Map<string, StorageAdapter> = new Map();
 
   static getInstance(): StorageManager {
@@ -20,66 +16,72 @@ export class StorageManager {
     return StorageManager.instance;
   }
 
-  // 返回类型已修复
-  async getActiveStorage(): Promise<StorageAdapter> {
-    // 修复：Prisma 客户端上的属性必须与 'schema.prisma' 文件中的模型名称完全匹配。
-    // 错误 "Property 'storageConfig' does not exist" 意味着名称不正确。
-    // 请对照您的 schema 文件，验证 'storageConfig' 是否为正确的模型名称。
-    const activeConfig = await prisma.storageConfig.findFirst({
-      where: { isActive: true },
-      orderBy: { priority: 'desc' },
+  /**
+   * 获取默认的存储配置。
+   * 在 schema.prisma 中，我们用 isDefault 字段来标记。
+   */
+  async getDefaultStorage(): Promise<StorageAdapter> {
+    // --- 核心修复 #1 ---
+    // 1. 模型名称已从错误的 `storageConfig` 更正为正确的 `storage`。
+    // 2. 查询条件已从错误的 `isActive` 和 `priority` 更正为 schema 中定义的 `isDefault`。
+    const defaultStorageConfig = await prisma.storage.findFirst({
+      where: { isDefault: true },
     });
 
-    if (!activeConfig) {
-      // 如果没有配置，使用默认的本地存储
-      console.warn("No active storage config found, defaulting to local storage.");
-      return this.getOrCreateStorage('default-local', StorageProvider.LOCAL, {
-        uploadDir: path.resolve('./public/uploads'), // 建议使用 public 目录
+    // 如果数据库中没有设置任何默认存储，则回退到代码中定义的本地存储。
+    if (!defaultStorageConfig) {
+      console.warn("No default storage config found in DB, defaulting to local fallback.");
+      return this.getOrCreateStorage('default-local-fallback', StorageProvider.LOCAL, {
+        uploadDir: path.resolve('./public/uploads'),
         baseUrl: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000',
       });
     }
 
+    // 如果找到了默认存储配置，则使用它。
     return this.getOrCreateStorage(
-      activeConfig.id,
-      activeConfig.provider,
-      activeConfig.config
+      defaultStorageConfig.id,
+      defaultStorageConfig.provider,
+      defaultStorageConfig.config
     );
   }
 
-  // 返回类型已修复
+  /**
+   * 根据指定的驱动类型获取存储实例。
+   */
   async getStorageByProvider(provider: StorageProvider): Promise<StorageAdapter> {
-    // 修复：此处也需要确保使用了正确的模型名称。
-    const config = await prisma.storageConfig.findFirst({
+    // --- 核心修复 #2 ---
+    // 模型名称已从错误的 `storageConfig` 更正为正确的 `storage`。
+    const storageConfig = await prisma.storage.findFirst({
       where: { provider },
     });
 
-    if (!config) {
-      throw new Error(`Storage configuration for ${provider} not found`);
+    if (!storageConfig) {
+      throw new Error(`Storage configuration for provider "${provider}" not found in database.`);
     }
 
-    return this.getOrCreateStorage(config.id, config.provider, config.config);
+    return this.getOrCreateStorage(storageConfig.id, storageConfig.provider, storageConfig.config);
   }
 
-  // 这是被改造为工厂的核心方法
+  /**
+   * (内部方法) 根据配置创建或获取缓存的存储适配器实例。
+   */
   private getOrCreateStorage(
     id: string,
     provider: StorageProvider,
     config: any
-  ): StorageAdapter { // 返回类型已修复
+  ): StorageAdapter {
     if (!this.storageServices.has(id)) {
       let adapter: StorageAdapter;
 
-      // 使用 switch 语句来根据 provider 创建不同的适配器实例
       switch (provider) {
         case StorageProvider.LOCAL:
           adapter = new LocalStorageAdapter(config);
           break;
         
+        // 当您未来支持 S3 时，可以在此添加 case
         // case StorageProvider.S3:
-        //   adapter = new S3StorageAdapter(config); // 示例：如果您有 S3
+        //   adapter = new S3StorageAdapter(config);
         //   break;
-
-        // ...可以添加其他存储提供商，如 OSS, COS 等
 
         default:
           throw new Error(`Unsupported storage provider: ${provider}`);
@@ -87,7 +89,6 @@ export class StorageManager {
       this.storageServices.set(id, adapter);
     }
     
-    // 使用 '!' 断言值一定存在，因为如果不存在，上面已经 set 了
     return this.storageServices.get(id)!;
   }
 }

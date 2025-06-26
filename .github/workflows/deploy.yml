@@ -29,7 +29,8 @@ jobs:
       
       # 新增步骤: 将构建产物和依赖打包成一个文件
       - name: Create Deployment Package
-        run: tar -zcf deploy.tar.gz .next node_modules package.json public prisma
+        # 关键修复: 移除了 "public" 目录，因为它在您的项目中不存在
+        run: tar -zcf deploy.tar.gz .next node_modules package.json prisma
 
       - name: Add remote host to known_hosts
         run: |

@@ -2,13 +2,13 @@
  * ==========================================================
  * 文件: lib/storage/providers/tencent-cos.ts
  * ==========================================================
- * 修复说明: 使用 InstanceType<typeof COS> 来精确推导客户端类型，解决编译错误。
+ * 修复说明: 为回调函数参数添加了显式类型 `any`，以解决 "implicitly has an 'any' type" 编译错误。
  */
 import COS from 'cos-nodejs-sdk-v5';
 import { StorageAdapter } from '../index';
 
 export class TencentCOSStorage implements StorageAdapter {
-  private client: InstanceType<typeof COS>; // <--- 关键修复
+  private client: InstanceType<typeof COS>;
   private config: any;
   constructor(config: any) {
     this.client = new COS({ SecretId: config.secretId, SecretKey: config.secretKey });
@@ -19,7 +19,7 @@ export class TencentCOSStorage implements StorageAdapter {
         this.client.putObject({
             Bucket: this.config.bucket, Region: this.config.region,
             Key: filename, Body: fileBuffer,
-        }, (err, data) => {
+        }, (err: any, data: any) => { // <--- 关键修复
             if (err) return reject(err);
             resolve('https://' + data.Location);
         });
@@ -30,7 +30,7 @@ export class TencentCOSStorage implements StorageAdapter {
         this.client.deleteObject({
             Bucket: this.config.bucket, Region: this.config.region,
             Key: filename,
-        }, (err, data) => {
+        }, (err: any, data: any) => { // <--- 关键修复
             if(err) return reject(err);
             resolve();
         });

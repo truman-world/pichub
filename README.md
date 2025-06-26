@@ -1,118 +1,106 @@
 <p align="center">
-  <img src="[[https://raw.githubusercontent.com/truman-world/pichub/main/public/logo.svg](https://raw.githubusercontent.com/truman-world/pichub/e2a689b8e1b25b8c5f838f52c62d42ad6decaa6d/pichub.app.png)](https://raw.githubusercontent.com/truman-world/pichub/e2a689b8e1b25b8c5f838f52c62d42ad6decaa6d/pichub.app.png)" alt="PicHub Logo" width="120">
+  <img src="./logo.png" alt="PicHub Logo" width="150"/>
 </p>
 
-<h1 align="center">PicHub</h1>
-
-<p align="center">
-  <strong>🖼️ 为开发者、内容创作者和团队打造的现代化、可自托管、企业级的开源图床解决方案</strong>
-</p>
+<h1 align="center">PicHub - 新一代智能图床解决方案</h1>
 
 <p align="center">
-  <a href="#"><img src="https://img.shields.io/badge/version-1.0.0-blue.svg" alt="版本"></a>
-  <a href="https://github.com/truman-world/pichub/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="开源协议"></a>
-  <a href="https://github.com/truman-world/pichub/actions/workflows/deploy.yml"><img src="https://github.com/truman-world/pichub/actions/workflows/deploy.yml/badge.svg" alt="CI/CD Status"></a>
-  <a href="https://github.com/truman-world/pichub/graphs/contributors"><img src="https://img.shields.io/github/contributors/truman-world/pichub" alt="贡献者"></a>
+  <img alt="构建状态" src="https://img.shields.io/badge/build-passing-brightgreen">
+  <img alt="技术栈" src="https://img.shields.io/badge/teck-Next.js%20%7C%20Prisma%20%7C%20PostgreSQL-blue">
+  <img alt="许可证" src="https://img.shields.io/badge/license-MIT-green">
 </p>
+
+**PicHub** 不仅仅是一个简单的图床。它是一个基于现代化技术栈构建的、高度可扩展、安全可控的私有化图像存储与管理平台，专为追求数据所有权、高可定制性和自动化运维的开发者与团队设计。
 
 ---
 
-**PicHub** 不仅仅是一个图床。它是一个基于现代全栈技术、专为追求数据主权和极致性能的开发者与团队设计的**私有化图片资产管理中心**。它将强大的功能、优雅的设计与企业级的部署流程融为一体，让您对自己的数字资产拥有绝对的控制权。
+## 核心特点 ✨
 
-## ✨ 核心优势：为什么选择 PicHub？
+* **🚀 一键式安装向导**: 告别繁琐的命令行配置。首次部署，系统将自动引导您进入图形化安装界面，轻松完成管理员账户和基础设置。
+* **🧩 灵活的存储策略**: 内置强大的存储管理器。默认支持本地服务器存储，并采用面向接口的适配器模式（Adapter Pattern），使您可以轻松扩展对接阿里云OSS、腾讯云COS、Amazon S3等任意云存储服务。
+* **🔐 数据安全与所有权**: 完全私有化部署，您的所有图片和用户数据都掌握在自己手中。采用 `bcrypt` 对密码进行高强度哈希加密，并通过 `HttpOnly` Cookie 配合 `JWT` 保护用户会话，确保用户信息安全。
+* **💻 现代化技术栈**: 使用 **Next.js**、**TypeScript** 和 **Prisma** 等业界前沿技术构建，为您带来极致的开发体验、强大的类型安全和高效的数据库交互。
+* **⚙️ 自动化CI/CD流程**: 集成 **GitHub Actions**，实现真正的 `Push-to-Deploy`。您只需将代码推送到 `main` 分支，即可自动触发测试、构建、打包和服务器部署，极大提升开发效率。
+* **🌐 高度可扩展**: 从存储适配器到API接口，项目在设计之初就充分考虑了未来的功能扩展，为您天马行空的想象力提供坚实的技术基础。
 
-* 🚀 **企业级的技术架构 (Enterprise-Grade Architecture)**:
-    * **前端**: 采用 **Next.js 14 (App Router)** 和 **React 18** 构建，利用服务端组件（RSC）和流式渲染（Streaming）等前沿技术，提供了极致的页面加载速度和卓越的用户体验。
-    * **后端**: 基于 Next.js API Routes 和业界领先的 **Prisma ORM**，实现了高效的数据库交互和清晰的业务逻辑分层。
-    * **语言**: **全栈 TypeScript** 提供了端到端的类型安全，极大地提高了代码的可维护性和健壮性，是大型项目和团队协作的基石。
-    * **样式**: 采用 **Tailwind CSS** 和 **ShadCN/UI** 组件库，轻松实现美观、一致且高度可定制的界面。
+---
 
-* 🔐 **绝对的数据主权 (Complete Data Sovereignty)**:
-    * **100% 自托管**: 您可以将 PicHub 部署在**任何您自己的服务器或私有云**上。所有图片、元数据和用户信息都完全在您的掌控之中，彻底摆脱第三方服务的数据泄露、审查或服务关停风险。
+## 项目优势 🎯
 
-* ☁️ **高度可扩展的存储后端 (Highly Extensible Storage)**:
-    * 采用面向接口的**策略模式（Strategy Pattern）** 进行设计，存储后端与主程序完全解耦。这使得添加新的存储方案变得异常简单，无论是**本地服务器磁盘**，还是**阿里云 OSS**、**腾讯云 COS**、**AWS S3**，乃至 **FTP/SFTP**，都可以作为存储引擎无缝集成。
+与其他图床项目相比，PicHub 在以下方面拥有无可比拟的优势：
 
-* 🤖 **专业、可靠的自动化部署 (Professional CI/CD)**:
-    * 项目内置了经过反复优化的 **GitHub Actions** 工作流。该工作流采用**构建与部署分离**的最佳实践：在 GitHub 高性能服务器上完成所有耗时的编译和依赖安装，然后将一个轻量级的、可直接运行的“成品”推送到您的服务器上。这极大地降低了对您服务器性能的要求，确保了部署过程的**高速和稳定**。
+#### 1. 模块化与高扩展性 (Modularity & Extensibility)
 
-* 💡 **智能化的初始设置 (Intelligent Setup)**:
-    * 内置优雅的**首次运行检测机制**。当应用检测到尚未初始化时，会自动引导第一个登录的用户进入设置页面，创建管理员账户，整个过程无需任何命令行操作，极大地简化了首次部署的复杂度。
+我们的核心竞争力在于**存储适配器（Storage Adapter）设计模式**。我们没有将文件上传逻辑与任何特定的存储服务（如本地存储）耦合，而是定义了一个统一的 `StorageAdapter` 接口。
 
-* 👥 **完善的用户与权限体系 (Robust User & Permission System)**:
-    * 提供完整的用户注册、登录和角色管理功能。**管理员**与**普通用户**的角色分离，为团队协作和权限控制提供了基础。
+```typescript
+// 所有存储驱动都必须遵守的统一规范
+export interface StorageAdapter {
+  upload(fileBuffer: Buffer, filename: string): Promise<string>;
+  delete(filename: string): Promise<void>;
+}
+```
+这意味着：
+* **轻松扩展**: 想支持一个新的云存储商？只需创建一个新的类来实现这个接口，然后在 `StorageManager` 中注册它即可，无需改动任何核心业务代码。
+* **自由切换**: 管理员可以在后台无缝切换存储策略，应用层代码完全无感，实现了业务与存储的彻底解耦。
 
-## 🎨 功能特性
+#### 2. 自动化与开发者体验 (Automation & DX)
 
--   [x] **公共上传主页**: 无需登录即可快速拖拽、粘贴或点击上传图片。
--   [x] **客户端图片处理**: 上传前可选择开启图片压缩，自定义压缩质量，有效节省存储空间和带宽。
--   [x] **多格式链接生成**: 上传成功后自动生成并展示 URL、HTML、BBCode 和 Markdown 四种常用链接格式，一键复制。
--   [x] **本地历史记录**: 在浏览器本地保存游客的上传历史，方便追溯。
--   [x] **智能初始化**: 首次部署自动引导创建管理员账户。
--   [x] **用户系统**: 支持用户注册、登录、角色管理（管理员/普通用户）。
--   [x] **仪表盘**: 为登录用户提供独立的上传和管理空间。
--   [x] **响应式设计**: 完美适配桌面、平板和手机等各种尺寸的设备。
--   [x] **主题切换**: 内置优雅的浅色与深色模式，并能跟随系统设置。
--   [ ] **相册管理 (规划中)**: 登录用户可创建、编辑、删除相册，对图片进行分类管理。
--   [ ] **更丰富的图片处理 (规划中)**: 添加水印、图片裁剪、尺寸调整等。
--   [ ] **更丰富的存储后端支持 (规划中)**:
-    -   [x] 本地服务器存储
-    -   [ ] 阿里云 OSS
-    -   [ ] 腾讯云 COS
-    -   [ ] 兼容 S3 的对象存储 (如 MinIO)
-    -   [ ] FTP / SFTP / WebDAV
+* **数据库迁移自动化**: 我们在部署脚本中集成了 `npx prisma db push`。这意味着您在本地对 `schema.prisma` 文件做的任何模型修改，在部署时都会被自动同步到生产环境的数据库，无需手动执行SQL。
+* **全栈TypeScript**: 从前端组件到后端API，再到数据库模型，完整的类型安全链条不仅减少了运行时错误，还带来了无与伦比的IDE代码补全和重构体验。
+* **Prisma ORM**: 提供了类型安全的数据库查询，让您像操作JavaScript对象一样操作数据库，同时有效防止了SQL注入等常见安全问题。
 
-## 🚀 部署指南 (推荐)
+#### 3. 部署即服务 (Deployment-as-a-Service)
 
-本项目**强烈推荐**使用提供的 **GitHub Actions** 工作流进行自动化部署，这是最简单、最可靠的方式。
+我们为您配置的 GitHub Actions 工作流，已经超越了简单的“构建与部署”，它是一个完整的自动化运维流程：
+1.  **自动构建**: 在云端隔离环境中编译项目。
+2.  **自动打包**: 仅打包必要文件（`.next`, `node_modules`, `prisma`等），减小部署包体积。
+3.  **SSH安全部署**: 通过SSH密钥安全地将代码包传输到您的服务器。
+4.  **无中断重启**: 在服务器上，脚本会自动解压、同步数据库、并使用PM2平滑地重启应用，确保服务高可用。
 
-1.  **准备服务器**:
-    * 一台已经安装好 **Node.js (>= 18.x)** 和 **PostgreSQL (>= 14)** 的服务器。
-    * 建议使用 PM2 来管理 Node.js 进程。
+---
 
-2.  **在服务器上创建配置文件**:
-    * 登录到您的服务器，进入您打算部署应用的目标目录（例如 `/www/wwwroot/pichub`）。
-    * 在该目录下创建一个名为 `.env.local` 的文件，并填入以下内容：
-        ```ini
-        # 数据库连接字符串，?sslmode=disable 对于本地数据库连接非常重要
-        DATABASE_URL='postgresql://USER:PASSWORD@localhost:5432/DATABASE?sslmode=disable'
-        
-        # 用于签发用户登录凭证的密钥，请务必修改为一个长而复杂的随机字符串
-        JWT_SECRET='YOUR_SUPER_SECRET_RANDOM_STRING'
-        
-        # 您的应用的访问地址
-        NEXTAUTH_URL='http://YOUR_SERVER_IP:3000'
-        ```
+## 技术栈 🛠️
 
-3.  **配置 GitHub Secrets**:
-    * Fork 本项目到您自己的 GitHub 账户。
-    * 在您的新仓库中，进入 **Settings -> Secrets and variables -> Actions**。
-    * 添加以下仓库机密 (Repository secrets)：
-        * `SERVER_HOST`: 您服务器的 IP 地址。
-        * `SERVER_USERNAME`: 您用于登录服务器的用户名（例如 `root`）。
-        * `SSH_PRIVATE_KEY`: 用于免密登录您服务器的 SSH 私钥。
+* **前端**: Next.js (React) / TypeScript
+* **后端**: Next.js API Routes / TypeScript
+* **数据库**: PostgreSQL / Prisma ORM
+* **认证**: JWT (JSON Web Tokens) / Cookies
+* **部署与运维**: GitHub Actions (CI/CD) / PM2 / Nginx (推荐)
 
-4.  **触发部署**:
-    * 将代码推送到您仓库的 `main` 分支。
-    * GitHub Actions 会自动接管一切：在云端完成编译打包，然后将一个可以直接运行的成品部署到您的服务器上，并用 PM2 重启应用。
+---
 
-部署完成后，即可开始使用。
+## 快速开始 🏁
 
-## 本地开发
+1.  **克隆项目**
+    ```bash
+    git clone [https://github.com/truman-world/pichub.git](https://github.com/truman-world/pichub.git)
+    ```
+2.  **安装依赖**
+    ```bash
+    cd pichub
+    npm install
+    ```
+3.  **配置环境变量**
+    复制 `.env.example` (如果存在) 为 `.env.local`，并填入您的数据库连接信息和密钥。
+    ```env
+    DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
+    JWT_SECRET="YOUR_RANDOM_SECRET_KEY"
+    NEXTAUTH_URL="http://YOUR_DOMAIN_OR_IP:3000"
+    ```
+4.  **启动开发环境**
+    ```bash
+    npm run dev
+    ```
+    首次启动，请访问 `http://localhost:3000`，系统将自动引导您进入安装页面。
 
-如果您希望在本地进行开发或贡献代码，请遵循以下步骤：
+---
 
-1.  **克隆项目**: `git clone https://github.com/truman-world/pichub.git`
-2.  **进入目录**: `cd pichub`
-3.  **安装依赖**: `npm install`
-4.  **配置本地环境**: 复制 `.env.local.example` 为 `.env.local` 并填入您的本地数据库信息。
-5.  **初始化数据库**: `npx prisma db push`
-6.  **启动开发服**: `npm run dev`
+## 贡献指南 🤝
 
-## 🤝 参与贡献
+我们欢迎任何形式的贡献！无论是提交 issue、修复 Bug 还是开发新功能。请遵循标准的 Fork & Pull Request 流程。
 
-我们张开双臂欢迎任何形式的贡献！无论是提交 Issue 来报告问题、修复一个 Bug、实现一个新功能还是仅仅是改进文档，都对这个项目非常有帮助。
+## 许可证 📜
 
-## 📄 开源协议
+本项目采用 [MIT](https://opensource.org/licenses/MIT) 许可证。
 
-本项目基于 [MIT License](https://github.com/truman-world/pichub/blob/main/LICENSE) 开源。

@@ -2,9 +2,11 @@
  * ==========================================================
  * 文件: lib/storage/providers/sftp.ts
  * ==========================================================
- * 修复说明: 修正了 upload 方法的参数顺序。
+ * 修复说明: 添加了缺失的 `import { StorageAdapter } from '../index';`
  */
 import SftpClient from 'ssh2-sftp-client';
+import { StorageAdapter } from '../index'; // <--- 关键修复
+
 export class SFTPStorage implements StorageAdapter {
     private client: SftpClient;
     constructor(config: any) { this.client = new SftpClient(); }

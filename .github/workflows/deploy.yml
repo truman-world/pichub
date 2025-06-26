@@ -27,37 +27,27 @@ jobs:
           npm install
           npm run build
       
+      # 新增步骤: 将构建产物和依赖打包成一个文件
+      - name: Create Deployment Package
+        run: tar -zcf deploy.tar.gz .next node_modules package.json public prisma
+
       - name: Add remote host to known_hosts
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H "${{ secrets.SERVER_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Clean old files on server (keeping .env.local)
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            mkdir -p /www/wwwroot/8.148.7.13
-            cd /www/wwwroot/8.148.7.13
-            shopt -s extglob
-            rm -rf !(.env.local)
-            echo "✅ Old files cleaned up, .env.local was preserved."
-
-      # 2. 将完整的 "成品" (包括 node_modules) 传送到您的服务器
-      - name: Deploy Complete Application Package
+      # 2. 将单个打包文件传送到您的服务器 (更稳定可靠)
+      - name: Deploy Package to Server
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: ".next, node_modules, package.json, public, prisma"
+          source: "deploy.tar.gz"
           target: "/www/wwwroot/8.148.7.13"
-          strip_components: 1
 
-      # 3. 在您的服务器上执行极速重启脚本
-      - name: Generate Prisma Client and Restart PM2
+      # 3. 在您的服务器上解压并执行极速重启脚本
+      - name: Unpack, Generate Prisma Client, and Restart PM2
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -69,6 +59,16 @@ jobs:
             # 明确指定 Node.js 的路径
             export PATH=/www/server/nodejs/v18.20.8/bin:$PATH
             
+            # 清理旧文件 (保留 .env.local 和新的压缩包)
+            shopt -s extglob
+            rm -rf !(.env.local|deploy.tar.gz)
+            echo "✅ Old files cleaned up."
+
+            # 解压缩新的代码包
+            tar -zxf deploy.tar.gz
+            rm deploy.tar.gz
+            echo "✅ New package unpacked."
+
             # 生成 Prisma Client (这个过程非常快)
             # 它会自动读取您在服务器上创建的 .env.local 文件
             npx prisma generate

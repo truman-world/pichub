@@ -5,7 +5,7 @@
  * 修复说明: 添加了缺失的 `import { StorageAdapter } from '../index';`
  */
 import AWS from 'aws-sdk';
-import { StorageAdapter } from '../index'; // <--- 关键修复
+import { StorageAdapter } from '../index';
 
 export class S3Storage implements StorageAdapter {
   private s3: AWS.S3;

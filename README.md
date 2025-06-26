@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/truman-world/pichub/main/public/logo.svg" alt="PicHub Logo" width="120">
+  <img src="[https://raw.githubusercontent.com/truman-world/pichub/main/public/logo.svg](https://raw.githubusercontent.com/truman-world/pichub/e2a689b8e1b25b8c5f838f52c62d42ad6decaa6d/pichub.app.png)" alt="PicHub Logo" width="120">
 </p>
 
 <h1 align="center">PicHub</h1>

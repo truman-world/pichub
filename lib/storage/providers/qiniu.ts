@@ -5,7 +5,7 @@
  * 修复说明: 添加了缺失的 `import { StorageAdapter } from '../index';`
  */
 import * as qiniu from 'qiniu';
-import { StorageAdapter } from '../index'; // <--- 关键修复
+import { StorageAdapter } from '../index';
 
 export class QiniuStorage implements StorageAdapter {
     private mac: qiniu.auth.digest.Mac;

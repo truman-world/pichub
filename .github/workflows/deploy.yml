@@ -32,9 +32,9 @@ jobs:
         run: npm run build
         
       # --- 核心修复点 ---
-      # 从打包命令中移除了 "public" 目录，因为它在您的项目中不存在。
+      # 重新将 public 目录添加到部署包中，以包含 favicon.ico 等静态文件
       - name: Create Deployment Package
-        run: tar -zcf deploy.tar.gz .next node_modules package.json prisma
+        run: tar -zcf deploy.tar.gz .next node_modules package.json prisma public
 
       - name: Add remote host to known_hosts
         run: |

@@ -1,26 +1,23 @@
+/*
+ * =================================================
+ * 更新文件: app/(auth)/login/page.tsx
+ * =================================================
+ * 修复说明:
+ * 1. 在登录成功后，不再仅仅是提示，而是会立即执行页面跳转。
+ * 2. 使用 router.refresh() 强制刷新客户端状态，确保 token 生效。
+ * 3. 根据后端返回的用户角色，精确地将管理员跳转到 /dashboard，普通用户跳转到主页 /。
+ */
 'use client';
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/use-toast';
 import Link from 'next/link';
 
-/**
- * 登录页面
- * - 处理用户登录表单
- * - 调用登录API
- * - 成功后根据用户角色重定向
- */
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -48,15 +45,15 @@ export default function LoginPage() {
         title: '登录成功',
         description: '欢迎回来!',
       });
-
-      // 刷新页面以确保认证状态在客户端和服务端同步
+      
+      // 关键修复: 强制刷新页面以同步认证状态
       router.refresh();
 
-      // 根据角色进行跳转
+      // 关键修复: 根据角色进行精确跳转
       if (data.user.role === 'ADMIN') {
         router.push('/dashboard');
       } else {
-        router.push('/dashboard/gallery');
+        router.push('/');
       }
 
     } catch (error: any) {
@@ -65,6 +62,7 @@ export default function LoginPage() {
         description: error.message,
         variant: 'destructive',
       });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -74,35 +72,18 @@ export default function LoginPage() {
       <Card className="mx-auto max-w-sm w-full">
         <CardHeader>
           <CardTitle className="text-2xl">登录</CardTitle>
-          <CardDescription>
-            输入您的用户名以登录您的账户
-          </CardDescription>
+          <CardDescription>输入您的用户名以登录您的账户</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin}>
             <div className="grid gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="username">用户名</Label>
-                <Input
-                  id="username"
-                  type="text"
-                  placeholder="admin"
-                  required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  disabled={isLoading}
-                />
+                <Input id="username" type="text" placeholder="admin" required value={username} onChange={(e) => setUsername(e.target.value)} disabled={isLoading}/>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="password">密码</Label>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  required 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading}
-                />
+                <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} disabled={isLoading}/>
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? '登录中...' : '登录'}
@@ -111,9 +92,7 @@ export default function LoginPage() {
           </form>
           <div className="mt-4 text-center text-sm">
             还没有账户?{' '}
-            <Link href="/register" className="underline">
-              注册
-            </Link>
+            <Link href="/register" className="underline">注册</Link>
           </div>
         </CardContent>
       </Card>

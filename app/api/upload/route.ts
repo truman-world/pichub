@@ -14,6 +14,7 @@ import { join } from 'path';
 import { randomBytes } from 'crypto';
 import prisma from '@/lib/prisma';
 import { getAuth } from '@/lib/auth'; // 我们将创建一个新的 auth 工具
+import { mkdir } from 'fs/promises';
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,20 +37,22 @@ export async function POST(req: NextRequest) {
     // 定义存储路径 (服务器的 public 目录)
     const relativeUploadDir = 'uploads';
     const uploadDir = join(process.cwd(), 'public', relativeUploadDir);
-    const filePath = join(uploadDir, randomName);
+    
+    // 确保目录存在
+    await mkdir(uploadDir, { recursive: true });
 
-    // 确保目录存在 (这个逻辑在 storage/local.ts 中处理更佳，此处为简化)
-    // 在实际的 local.ts 中您应该有 fs.mkdirSync(uploadDir, { recursive: true });
+    const filePath = join(uploadDir, randomName);
     
     await writeFile(filePath, buffer);
 
     // 生成可公开访问的 URL
-    const fileUrl = `/${relativeUploadDir}/${randomName}`;
+    const fileUrl = `/${relativeUploadgDir}/${randomName}`;
 
     // 在数据库中创建记录
+    // 关键修复：根据 TypeScript 错误提示，将 'name' 字段修改为 'title'
     const image = await prisma.image.create({
       data: {
-        name: file.name,
+        title: file.name, // 使用 'title' 字段
         url: fileUrl,
         size: file.size,
         userId: user?.id, // 如果是游客上传，userId 为 null

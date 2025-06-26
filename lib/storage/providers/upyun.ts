@@ -5,7 +5,7 @@
  * 修复说明: 添加了缺失的 `import { StorageAdapter } from '../index';`
  */
 import * as upyun from 'upyun';
-import { StorageAdapter } from '../index'; // <--- 关键修复
+import { StorageAdapter } from '../index';
 
 export class UpyunStorage implements StorageAdapter {
     private client: any;

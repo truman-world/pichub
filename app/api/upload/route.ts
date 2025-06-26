@@ -15,6 +15,7 @@ import { randomBytes } from 'crypto';
 import prisma from '@/lib/prisma';
 import { getAuth } from '@/lib/auth'; // 我们将创建一个新的 auth 工具
 import { mkdir } from 'fs/promises';
+import { Prisma } from '@prisma/client'; // 导入 Prisma 类型
 
 export async function POST(req: NextRequest) {
   try {
@@ -48,22 +49,27 @@ export async function POST(req: NextRequest) {
     // 生成可公开访问的 URL
     const fileUrl = `/${relativeUploadDir}/${randomName}`;
 
-    // 在数据库中创建记录
-    // 关键修复: 根据 TypeScript 错误，添加了数据库模型必需的 filename 和 originalName 字段。
+    // --- 终极修复：采用更健壮、类型安全的方式来构建数据 ---
+    // 1. 定义一个严格符合数据库模型的基础数据对象
+    const imageData: Prisma.ImageCreateInput = {
+      url: fileUrl,
+      size: file.size,
+      filename: randomName,
+      originalName: file.name,
+    };
+
+    // 2. 如果用户已登录，则添加用户关联信息
+    if (user) {
+      imageData.user = {
+        connect: {
+          id: user.id,
+        },
+      };
+    }
+
+    // 3. 使用这个完美构造好的数据对象来创建记录
     const image = await prisma.image.create({
-      data: {
-        url: fileUrl,
-        size: file.size,
-        filename: randomName, // 存储在服务器上的随机文件名
-        originalName: file.name, // 图片的原始文件名
-        ...(user && { // 如果用户存在，则关联该用户
-          user: {
-            connect: {
-              id: user.id,
-            },
-          },
-        }),
-      },
+      data: imageData,
     });
 
     return NextResponse.json({

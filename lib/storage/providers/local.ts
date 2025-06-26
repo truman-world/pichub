@@ -1,48 +1,33 @@
-// lib/storage/providers/local.ts - 本地存储
-import fs from 'fs/promises'
-import path from 'path'
+/*
+ * ==========================================================
+ * 文件: lib/storage/providers/local.ts
+ * ==========================================================
+ * 修复说明:
+ * 1. 修正了 upload 方法的参数顺序。
+ * 2. 确保文件写入逻辑与新的参数顺序一致。
+ */
+import { writeFile, mkdir, unlink } from 'fs/promises'
+import { join } from 'path'
 import { StorageAdapter } from '../index'
 
 export class LocalStorage implements StorageAdapter {
   private uploadDir: string
   private baseUrl: string
 
-  constructor(config: { uploadDir: string; baseUrl: string }) {
-    this.uploadDir = config.uploadDir || './uploads'
-    this.baseUrl = config.baseUrl || 'http://localhost:3000'
+  constructor(config: any) {
+    this.uploadDir = config.uploadDir || join(process.cwd(), 'public', 'uploads')
+    this.baseUrl = config.baseUrl || '/uploads'
   }
 
-  async upload(key: string, buffer: Buffer): Promise<string> {
-    const filePath = path.join(this.uploadDir, key)
-    const dir = path.dirname(filePath)
-    
-    await fs.mkdir(dir, { recursive: true })
-    await fs.writeFile(filePath, buffer)
-    
-    return this.getUrl(key)
+  async upload(fileBuffer: Buffer, filename: string): Promise<string> {
+    await mkdir(this.uploadDir, { recursive: true })
+    const filePath = join(this.uploadDir, filename)
+    await writeFile(filePath, fileBuffer)
+    return `${this.baseUrl}/${filename}`
   }
 
-  async delete(key: string): Promise<void> {
-    const filePath = path.join(this.uploadDir, key)
-    await fs.unlink(filePath)
-  }
-
-  async get(key: string): Promise<Buffer> {
-    const filePath = path.join(this.uploadDir, key)
-    return fs.readFile(filePath)
-  }
-
-  getUrl(key: string): string {
-    return `${this.baseUrl}/uploads/${key}`
-  }
-
-  async exists(key: string): Promise<boolean> {
-    const filePath = path.join(this.uploadDir, key)
-    try {
-      await fs.access(filePath)
-      return true
-    } catch {
-      return false
-    }
+  async delete(filename: string): Promise<void> {
+    const filePath = join(this.uploadDir, filename)
+    await unlink(filePath)
   }
 }

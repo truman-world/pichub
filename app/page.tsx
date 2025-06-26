@@ -10,30 +10,31 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 
-/**
- * 主页组件
- * - 检查应用是否已初始化（通过检查用户数量）
- * - 如果未初始化，则重定向到安装页面
- * - 如果已初始化，则显示公共主页内容
- */
+export const dynamic = 'force-dynamic'; // 确保页面每次都被动态渲染
+
 export default async function HomePage() {
   try {
     const userCount = await prisma.user.count();
     if (userCount === 0) {
       redirect('/setup');
     }
-  } catch (error) {
-    // 数据库连接失败等情况
+  } catch (error: any) {
+    // --- 关键改进：在服务器日志中打印出详细的错误信息 ---
+    console.error("[HOMEPAGE_DB_ERROR] Failed to connect to database. The actual error is:", error);
+    
+    // 向用户显示一个友好的错误页面
     return (
-        <div className="flex items-center justify-center min-h-screen bg-red-50">
-            <div className="text-center p-8 bg-white rounded-lg shadow-md">
-                <h1 className="text-2xl font-bold text-red-600 mb-4">数据库连接错误</h1>
-                <p className="text-gray-700">无法连接到数据库。请检查您的 `.env.local` 文件中的 `DATABASE_URL` 配置是否正确，并确保数据库服务正在运行。</p>
+        <div className="flex items-center justify-center min-h-screen bg-red-50 dark:bg-gray-800">
+            <div className="text-center p-8 bg-white dark:bg-gray-900 rounded-lg shadow-md">
+                <h1 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">数据库连接错误</h1>
+                <p className="text-gray-700 dark:text-gray-300">无法连接到数据库。请检查您的 `.env.local` 文件中的 `DATABASE_URL` 配置是否正确，并确保数据库服务正在运行。</p>
+                <p className="text-xs text-gray-500 mt-4">详细错误已记录在服务器日志中，请联系管理员检查。</p>
             </div>
         </div>
     )
   }
 
+  // 如果连接成功，则渲染主页
   return (
     <main className="flex flex-col items-center justify-center min-h-screen p-8 bg-gray-50 dark:bg-gray-900">
       <Card className="w-full max-w-md text-center">

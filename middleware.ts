@@ -1,86 +1,59 @@
+// middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import * as jose from 'jose';
+import { PrismaClient } from '@prisma/client';
 
-/**
- * 路由中间件
- * - 验证JWT token
- * - 保护需要登录才能访问的路由
- * - 将已登录的用户从登录/注册页重定向走
- * - 允许公共路由访问
- */
-export async function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
-  const token = req.cookies.get('token')?.value;
+const prisma = new PrismaClient();
 
-  // 定义受保护的路由前缀
-  const protectedPrefixes = ['/dashboard'];
-  const isProtectedRoute = protectedPrefixes.some(prefix => pathname.startsWith(prefix));
-  
-  // 定义认证页面（登录、注册）和安装页面
-  const authRoutes = ['/login', '/register'];
-  const isAuthRoute = authRoutes.includes(pathname);
-  const isSetupRoute = pathname === '/setup';
+// 定义一个全局变量来缓存安装状态，避免每次请求都查询数据库
+let isInstalled: boolean | null = null;
 
-  // 如果访问的是安装页面，直接放行
-  if (isSetupRoute) {
-    return NextResponse.next();
+async function checkInstallation() {
+  if (isInstalled === null) {
+    try {
+      const admin = await prisma.user.findFirst({
+        where: { role: 'ADMIN' },
+      });
+      isInstalled = Boolean(admin);
+      console.log(`Installation check: ${isInstalled ? 'Installed' : 'Not Installed'}`);
+    } catch (error) {
+      console.error("Database connection error during installation check. Assuming not installed.", error);
+      // 如果数据库连接失败 (例如，在 CI/CD 环境中没有 DATABASE_URL)，
+      // 我们假设它未安装，但这应该由环境变量处理。
+      // 在实际运行中，这通常意味着需要安装。
+      isInstalled = false;
+    }
+  }
+  return isInstalled;
+}
+
+export async function middleware(request: NextRequest) {
+  const isAppInstalled = await checkInstallation();
+  const { pathname } = request.nextUrl;
+
+  // 如果未安装，并且用户访问的不是安装页面或其相关API，
+  // 则重定向到安装页面。
+  if (!isAppInstalled && !pathname.startsWith('/install') && !pathname.startsWith('/api/install')) {
+    return NextResponse.redirect(new URL('/install', request.url));
   }
 
-  // 检查Token是否存在
-  if (!token) {
-    // 如果没有token且访问的是受保护的页面，重定向到登录页
-    if (isProtectedRoute) {
-      return NextResponse.redirect(new URL('/login', req.url));
-    }
-    // 其他情况（访问公共页面）直接放行
-    return NextResponse.next();
-  }
-
-  // 如果有token，验证它
-  try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
-    await jose.jwtVerify(token, secret);
-
-    // Token有效，用户已登录
-    // 如果此时访问登录或注册页，重定向到仪表盘
-    if (isAuthRoute) {
-      return NextResponse.redirect(new URL('/dashboard', req.url));
-    }
-    
-    // 访问根目录时，也重定向到仪表盘
-    if (pathname === '/') {
-       return NextResponse.redirect(new URL('/dashboard', req.url));
-    }
-
-  } catch (error) {
-    // Token无效或过期
-    const response = NextResponse.next();
-    // 清除无效的cookie
-    response.cookies.delete('token');
-    
-    // 如果访问的是受保护页面，需要重定向到登录页并清除cookie
-    if (isProtectedRoute) {
-      const redirectResponse = NextResponse.redirect(new URL('/login', req.url));
-      redirectResponse.cookies.delete('token');
-      return redirectResponse;
-    }
-    
-    return response;
+  // 如果已安装，但用户试图访问安装页面，
+  // 则将他们重定向到首页。
+  if (isAppInstalled && pathname.startsWith('/install')) {
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
   return NextResponse.next();
 }
 
+// 定义中间件应该在哪些路径上运行
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
+     * 匹配除了以下划线开头 (如 _next/static, _next/image, api/auth)
+     * 或包含点 (如 favicon.ico) 的所有请求路径。
+     * 这确保了中间件在所有页面路由上运行。
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api/auth|_next/static|_next/image|favicon.ico).*)',
   ],
 };

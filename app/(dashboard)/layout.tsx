@@ -3,15 +3,17 @@
  * 更新文件: app/(dashboard)/layout.tsx
  * ==========================================
  * 修复说明:
- * 1. 这里是解决 "初始化页面不出现" 问题的关键。
- * 2. 我们将初始化检查的逻辑放在了这个受保护区域的布局文件中。
- * 3. 它会在用户尝试访问任何 dashboard 页面时，在服务器端进行检查。
- * 4. 如果数据库中没有任何用户，它会强制将用户重定向到 /setup 页面。
- * 5. 这样既保证了公共主页可以被任何人访问，又确保了系统的首次设置流程一定会被执行。
+ * 1. 在文件顶部添加了 `import Link from 'next/link';`，以解决 "Cannot find name 'Link'" 的编译错误。
+ * 2. 这里是解决 "初始化页面不出现" 问题的关键。
+ * 3. 我们将初始化检查的逻辑放在了这个受保护区域的布局文件中。
+ * 4. 它会在用户尝试访问任何 dashboard 页面时，在服务器端进行检查。
+ * 5. 如果数据库中没有任何用户，它会强制将用户重定向到 /setup 页面。
+ * 6. 这样既保证了公共主页可以被任何人访问，又确保了系统的首次设置流程一定会被执行。
  */
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import { getAuth } from '@/lib/auth';
+import Link from 'next/link'; // <--- 关键修复：添加缺失的导入
 
 export default async function DashboardLayout({
   children,

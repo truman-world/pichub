@@ -6,7 +6,7 @@
  */
 import { writeFile, mkdir, unlink } from 'fs/promises';
 import { join } from 'path';
-import { StorageAdapter } from '../index'; // <--- 关键修复
+import { StorageAdapter } from '../index'; 
 
 export class LocalStorage implements StorageAdapter {
   private uploadDir: string;

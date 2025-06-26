@@ -2,9 +2,11 @@
  * ==========================================================
  * 文件: lib/storage/providers/upyun.ts
  * ==========================================================
- * 修复说明: 修正了 upload 方法的参数顺序。
+ * 修复说明: 添加了缺失的 `import { StorageAdapter } from '../index';`
  */
 import * as upyun from 'upyun';
+import { StorageAdapter } from '../index'; // <--- 关键修复
+
 export class UpyunStorage implements StorageAdapter {
     private client: any;
     constructor(config: any) {

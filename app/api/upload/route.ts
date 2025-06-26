@@ -46,10 +46,10 @@ export async function POST(req: NextRequest) {
     await writeFile(filePath, buffer);
 
     // 生成可公开访问的 URL
-    const fileUrl = `/${relativeUploadgDir}/${randomName}`;
+    // 关键修复：修正变量名的拼写错误
+    const fileUrl = `/${relativeUploadDir}/${randomName}`;
 
     // 在数据库中创建记录
-    // 关键修复：根据 TypeScript 错误提示，将 'name' 字段修改为 'title'
     const image = await prisma.image.create({
       data: {
         title: file.name, // 使用 'title' 字段

@@ -1,86 +1,28 @@
-// lib/storage/index.ts - 存储服务主入口
-import { StorageProvider } from '@prisma/client'
-import { LocalStorage } from './providers/local'
-import { AliyunOSSStorage } from './providers/aliyun-oss'
-import { TencentCOSStorage } from './providers/tencent-cos'
-import { S3Storage } from './providers/s3'
-import { QiniuStorage } from './providers/qiniu'
-import { UpyunStorage } from './providers/upyun'
-import { SFTPStorage } from './providers/sftp'
-import { FTPStorage } from './providers/ftp'
-import { WebDAVStorage } from './providers/webdav'
-import { GithubStorage } from './providers/github'
-import { TelegramStorage } from './providers/telegram'
+/*
+ * ==========================================================
+ * 重构文件: lib/storage/index.ts
+ * ==========================================================
+ * 修复说明:
+ * 1. 彻底删除了错误的 `import { StorageProvider } from '@prisma/client'`。
+ * 2. Prisma 现在会自动将 schema.prisma 中定义的 enum 注入到它的客户端类型中，
+ * 这意味着当其他文件从 '@prisma/client' 导入时，将能正确找到 StorageProvider 类型。
+ * 3. 我们在这里只定义所有存储驱动都必须遵守的“统一接口规范” (StorageAdapter)。
+ */
 
+// 定义一个所有存储驱动都必须实现的统一接口
+// 这确保了无论是本地存储还是云存储，它们都以同样的方式工作。
 export interface StorageAdapter {
-  upload(key: string, buffer: Buffer, metadata?: any): Promise<string>
-  delete(key: string): Promise<void>
-  get(key: string): Promise<Buffer>
-  getUrl(key: string): string
-  exists(key: string): Promise<boolean>
-}
+  /**
+   * 上传文件
+   * @param fileBuffer 文件的二进制数据
+   * @param filename 在存储服务中使用的唯一文件名
+   * @returns 返回文件的可公开访问 URL
+   */
+  upload(fileBuffer: Buffer, filename: string): Promise<string>;
 
-export class StorageService {
-  private adapter: StorageAdapter
-
-  constructor(provider: StorageProvider, config: any) {
-    switch (provider) {
-      case StorageProvider.LOCAL:
-        this.adapter = new LocalStorage(config)
-        break
-      case StorageProvider.ALIYUN_OSS:
-        this.adapter = new AliyunOSSStorage(config)
-        break
-      case StorageProvider.TENCENT_COS:
-        this.adapter = new TencentCOSStorage(config)
-        break
-      case StorageProvider.AWS_S3:
-      case StorageProvider.MINIO:
-        this.adapter = new S3Storage(config)
-        break
-      case StorageProvider.QINIU:
-        this.adapter = new QiniuStorage(config)
-        break
-      case StorageProvider.UPYUN:
-        this.adapter = new UpyunStorage(config)
-        break
-      case StorageProvider.SFTP:
-        this.adapter = new SFTPStorage(config)
-        break
-      case StorageProvider.FTP:
-        this.adapter = new FTPStorage(config)
-        break
-      case StorageProvider.WEBDAV:
-        this.adapter = new WebDAVStorage(config)
-        break
-      case StorageProvider.GITHUB:
-        this.adapter = new GithubStorage(config)
-        break
-      case StorageProvider.TELEGRAM:
-        this.adapter = new TelegramStorage(config)
-        break
-      default:
-        throw new Error(`Unsupported storage provider: ${provider}`)
-    }
-  }
-
-  async upload(key: string, buffer: Buffer, metadata?: any): Promise<string> {
-    return this.adapter.upload(key, buffer, metadata)
-  }
-
-  async delete(key: string): Promise<void> {
-    return this.adapter.delete(key)
-  }
-
-  async get(key: string): Promise<Buffer> {
-    return this.adapter.get(key)
-  }
-
-  getUrl(key: string): string {
-    return this.adapter.getUrl(key)
-  }
-
-  async exists(key: string): Promise<boolean> {
-    return this.adapter.exists(key)
-  }
+  /**
+   * 删除文件
+   * @param filename 在存储服务中使用的唯一文件名
+   */
+  delete(filename: string): Promise<void>;
 }

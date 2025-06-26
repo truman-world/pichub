@@ -1,20 +1,19 @@
 /*
  * ==========================================================
- * 新文件: app/api/upload/route.ts
+ * 文件: app/api/upload/route.ts
  * ==========================================================
  * 这是项目的核心上传接口，它负责：
  * 1. 接收从前端发送过来的图片文件。
  * 2. 将文件存储到服务器的 `public/uploads` 目录下。
- * 3. 在数据库的 `Image` 表中创建一条记录。
+ * 3. 在数据库的 `Image` 表中创建一条记录，并能正确处理游客上传的情况。
  * 4. 将一个可公开访问的、真实的图片 URL 返回给前端。
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
+import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { randomBytes } from 'crypto';
 import prisma from '@/lib/prisma';
-import { getAuth } from '@/lib/auth'; // 我们将创建一个新的 auth 工具
-import { mkdir } from 'fs/promises';
+import { getAuth } from '@/lib/auth';
 import { Prisma } from '@prisma/client'; // 导入 Prisma 类型
 
 export async function POST(req: NextRequest) {
@@ -26,16 +25,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: '没有检测到文件。' }, { status: 400 });
     }
 
-    const user = await getAuth(); // 获取当前登录的用户信息
+    const user = await getAuth(); // 安全地获取当前登录用户，游客则为 null
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // 生成一个随机的文件名，避免重名
-    const fileExtension = file.name.split('.').pop();
+    // 根据您的设计，生成随机文件名
+    const fileExtension = file.name.split('.').pop() || 'tmp';
     const randomName = randomBytes(16).toString('hex') + '.' + fileExtension;
     
-    // 定义存储路径 (服务器的 public 目录)
+    // 默认存储到服务器的 public/uploads 目录
     const relativeUploadDir = 'uploads';
     const uploadDir = join(process.cwd(), 'public', relativeUploadDir);
     
@@ -54,8 +53,8 @@ export async function POST(req: NextRequest) {
     const imageData: Prisma.ImageCreateInput = {
       url: fileUrl,
       size: file.size,
-      filename: randomName,
-      originalName: file.name,
+      filename: randomName,       // 存储在服务器上的随机文件名
+      originalName: file.name,    // 图片的原始文件名
     };
 
     // 2. 如果用户已登录，则添加用户关联信息
@@ -68,7 +67,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. 使用这个完美构造好的数据对象来创建记录
-    const image = await prisma.image.create({
+    await prisma.image.create({
       data: imageData,
     });
 

@@ -1,20 +1,15 @@
 /*
- * --------------------------------
- * 文件: app/page.tsx (全新主页)
- * --------------------------------
- * 功能说明:
- * 1. 移除了旧的数据库连接检查逻辑，打造了一个纯粹的、无需登录即可使用的上传主页。
- * 2. 在页面顶部添加了清晰的 "登录" 和 "注册" 按钮。
- * 3. 集成了可复用的 <UploadZone /> 组件，作为页面的核心功能。
- * 4. 实现了您设计的 "图片处理设置" 功能，通过一个优雅的对话框来控制上传行为。
- * 5. 所有设置（如压缩质量）都会实时传递给上传组件，实现动态配置。
+ * ==========================================
+ * 更新文件: app/page.tsx
+ * ==========================================
+ * 主页现在从新的、正确的路径导入 UploadZone 组件。
  */
 'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { UploadZone } from '@/app/(dashboard)/dashboard/upload/page'; // 导入我们重构的组件
+import { UploadZone, ImageSettings } from '@/components/upload-zone'; // 导入我们创建的新组件
 import {
   Dialog,
   DialogContent,
@@ -30,18 +25,15 @@ import { Settings } from 'lucide-react';
 
 
 export default function HomePage() {
-  // 图片处理设置的状态
-  const [settings, setSettings] = useState({
+  const [settings, setSettings] = useState<ImageSettings>({
     compress: true,
     quality: 90,
   });
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* 页面顶部导航 */}
-      <header className="px-4 lg:px-6 h-14 flex items-center shadow-sm">
+      <header className="px-4 lg:px-6 h-14 flex items-center shadow-sm border-b">
         <Link href="/" className="flex items-center justify-center">
-          {/* 您可以替换成您的 Logo SVG */}
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
           <span className="ml-2 text-lg font-semibold">PicHub</span>
         </Link>
@@ -55,7 +47,6 @@ export default function HomePage() {
         </nav>
       </header>
       
-      {/* 主体内容 */}
       <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8">
         <div className="text-center mb-8">
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight">现代化、开源、可自托管的图床</h1>
@@ -64,10 +55,8 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* 上传区域 */}
         <UploadZone settings={settings} />
 
-        {/* 设置按钮 */}
         <div className="mt-6">
           <Dialog>
             <DialogTrigger asChild>
@@ -84,7 +73,6 @@ export default function HomePage() {
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-6 py-4">
-                {/* 压缩设置 */}
                 <div className="flex items-center justify-between">
                   <Label htmlFor="compress-switch" className="flex flex-col gap-1">
                     <span>压缩并转换为WebP</span>
@@ -96,7 +84,6 @@ export default function HomePage() {
                     onCheckedChange={(checked) => setSettings(prev => ({ ...prev, compress: checked }))}
                   />
                 </div>
-                {/* 压缩质量滑块 */}
                 {settings.compress && (
                     <div className="grid gap-2">
                          <Label htmlFor="quality-slider">压缩质量: <span className="font-bold">{settings.quality}</span></Label>
@@ -115,14 +102,12 @@ export default function HomePage() {
                          </div>
                     </div>
                 )}
-                 {/* 水印设置 (未来功能) */}
                  <div className="opacity-50">
                     <Label className="flex flex-col gap-1">
                         <span>水印设置 (规划中)</span>
                         <span className="text-xs font-normal text-gray-500">自动为上传的图片添加水印标识</span>
                     </Label>
                  </div>
-                 {/* 便捷功能 (未来功能) */}
                  <div className="opacity-50">
                     <Label className="flex flex-col gap-1">
                         <span>便捷功能 (规划中)</span>
@@ -135,7 +120,6 @@ export default function HomePage() {
         </div>
       </main>
 
-       {/* 页脚 */}
        <footer className="text-center p-4 text-sm text-gray-500">
         &copy; {new Date().getFullYear()} PicHub. Your Modern Image Hub.
       </footer>

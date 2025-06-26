@@ -2,7 +2,7 @@
  * ==========================================================
  * 文件: lib/storage/providers/qiniu.ts
  * ==========================================================
- * 修复说明: 添加了缺失的 `import { StorageAdapter } from '../index';`
+ * 修复说明: 确认 StorageAdapter 接口已正确导入。
  */
 import * as qiniu from 'qiniu';
 import { StorageAdapter } from '../index';

@@ -5,7 +5,7 @@ import { StorageProvider } from '@prisma/client'
 
 export class StorageManager {
   private static instance: StorageManager
-  private storageServices: Map<string, StorageService> = new Map()
+  private storageServices: Map<string, StorageAdapter> = new Map();
 
   static getInstance(): StorageManager {
     if (!StorageManager.instance) {

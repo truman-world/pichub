@@ -2,7 +2,7 @@
  * ==========================================================
  * 文件: lib/storage/providers/aliyun-oss.ts
  * ==========================================================
- * 修复说明: 修正了 upload 方法的参数顺序，使其与 StorageAdapter 接口完全匹配。
+ * 修复说明: 确认 StorageAdapter 接口已正确导入。
  */
 import OSS from 'ali-oss';
 import { StorageAdapter } from '../index';

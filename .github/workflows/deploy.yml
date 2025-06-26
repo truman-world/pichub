@@ -21,13 +21,21 @@ jobs:
           node-version: '18'
           cache: 'npm'
 
-      - name: Install All Dependencies & Build Project
-        run: |
-          npm install
-          npm run build
-      
+      # --- 核心修复点 ---
+      # 将安装和构建步骤分开，并在构建步骤中注入所需的环境变量
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Project
+        # 使用 env 关键字，将 GitHub Secrets 注入到构建环境中
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }} # 建议将所有需要的 secrets 都注入
+          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }} # 同上
+        run: npm run build
+        
       - name: Create Deployment Package
-        run: tar -zcf deploy.tar.gz .next node_modules package.json prisma
+        run: tar -zcf deploy.tar.gz .next node_modules package.json prisma public
 
       - name: Add remote host to known_hosts
         run: |

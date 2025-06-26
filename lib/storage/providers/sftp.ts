@@ -5,7 +5,7 @@
  * 修复说明: 添加了缺失的 `import { StorageAdapter } from '../index';`
  */
 import SftpClient from 'ssh2-sftp-client';
-import { StorageAdapter } from '../index'; // <--- 关键修复
+import { StorageAdapter } from '../index';
 
 export class SFTPStorage implements StorageAdapter {
     private client: SftpClient;

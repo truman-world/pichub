@@ -49,13 +49,18 @@ export async function POST(req: NextRequest) {
     const fileUrl = `/${relativeUploadDir}/${randomName}`;
 
     // 在数据库中创建记录
-    // 关键修复: 根据编译错误，您的 Image 模型似乎不需要存储原始文件名。
-    // 我们将只存储必要的信息，以匹配您的数据库结构。
+    // 关键修复: 使用条件对象和 connect 操作来正确处理可选的用户关联，以解决 TypeScript 类型错误。
     const image = await prisma.image.create({
       data: {
         url: fileUrl,
         size: file.size,
-        userId: user?.id, // 如果是游客上传，userId 为 null
+        ...(user && { // 如果用户存在，则关联该用户
+          user: {
+            connect: {
+              id: user.id,
+            },
+          },
+        }),
       },
     });
 

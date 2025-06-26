@@ -1,6 +1,6 @@
 // lib/storage/storage-manager.ts - 存储管理器
 import prisma from '@/lib/prisma' // 移除了大括号
-import { StorageService } from './index'
+import { StorageAdapter } from './index';
 import { StorageProvider } from '@prisma/client'
 
 export class StorageManager {

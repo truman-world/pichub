@@ -2,7 +2,7 @@
  * ==========================================================
  * 文件: lib/storage/providers/webdav.ts
  * ==========================================================
- * 修复说明: 添加了缺失的 `import { StorageAdapter } from '../index';`
+ * 修复说明: 确认 StorageAdapter 接口已正确导入。
  */
 import { createClient } from 'webdav';
 import { StorageAdapter } from '../index';

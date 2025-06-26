@@ -1,66 +1,144 @@
-import { redirect } from 'next/navigation';
+/*
+ * --------------------------------
+ * 文件: app/page.tsx (全新主页)
+ * --------------------------------
+ * 功能说明:
+ * 1. 移除了旧的数据库连接检查逻辑，打造了一个纯粹的、无需登录即可使用的上传主页。
+ * 2. 在页面顶部添加了清晰的 "登录" 和 "注册" 按钮。
+ * 3. 集成了可复用的 <UploadZone /> 组件，作为页面的核心功能。
+ * 4. 实现了您设计的 "图片处理设置" 功能，通过一个优雅的对话框来控制上传行为。
+ * 5. 所有设置（如压缩质量）都会实时传递给上传组件，实现动态配置。
+ */
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
-import prisma from '@/lib/prisma';
 import { Button } from '@/components/ui/button';
+import { UploadZone } from '@/app/(dashboard)/dashboard/upload/page'; // 导入我们重构的组件
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
+import { Settings } from 'lucide-react';
 
-export const dynamic = 'force-dynamic'; // 确保页面每次都被动态渲染
 
-export default async function HomePage() {
-  try {
-    const userCount = await prisma.user.count();
-    if (userCount === 0) {
-      redirect('/setup');
-    }
-  } catch (error: any) {
-    // --- 关键改进：在服务器日志中打印出详细的错误信息 ---
-    console.error("[HOMEPAGE_DB_ERROR] Failed to connect to database. The actual error is:", error);
-    
-    // 向用户显示一个友好的错误页面
-    return (
-        <div className="flex items-center justify-center min-h-screen bg-red-50 dark:bg-gray-800">
-            <div className="text-center p-8 bg-white dark:bg-gray-900 rounded-lg shadow-md">
-                <h1 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">数据库连接错误</h1>
-                <p className="text-gray-700 dark:text-gray-300">无法连接到数据库。请检查您的 `.env.local` 文件中的 `DATABASE_URL` 配置是否正确，并确保数据库服务正在运行。</p>
-                <p className="text-xs text-gray-500 mt-4">详细错误已记录在服务器日志中，请联系管理员检查。</p>
-            </div>
-        </div>
-    )
-  }
+export default function HomePage() {
+  // 图片处理设置的状态
+  const [settings, setSettings] = useState({
+    compress: true,
+    quality: 90,
+  });
 
-  // 如果连接成功，则渲染主页
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen p-8 bg-gray-50 dark:bg-gray-900">
-      <Card className="w-full max-w-md text-center">
-        <CardHeader>
-          <CardTitle className="text-4xl font-bold">欢迎来到 PicHub</CardTitle>
-          <CardDescription className="text-lg text-gray-600 dark:text-gray-300 mt-2">
-            一个现代化的图床解决方案。
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="mb-6">
-            轻松上传、管理和分享您的图片。
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* 页面顶部导航 */}
+      <header className="px-4 lg:px-6 h-14 flex items-center shadow-sm">
+        <Link href="/" className="flex items-center justify-center">
+          {/* 您可以替换成您的 Logo SVG */}
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+          <span className="ml-2 text-lg font-semibold">PicHub</span>
+        </Link>
+        <nav className="ml-auto flex gap-4 sm:gap-6">
+          <Button asChild variant="ghost">
+            <Link href="/login">登录</Link>
+          </Button>
+          <Button asChild>
+            <Link href="/register">注册</Link>
+          </Button>
+        </nav>
+      </header>
+      
+      {/* 主体内容 */}
+      <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight">现代化、开源、可自托管的图床</h1>
+          <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-600 dark:text-gray-400">
+            轻松上传、管理和分享您的图片，数据完全由您掌控。
           </p>
-          <div className="flex justify-center gap-4">
-            <Button asChild>
-              <Link href="/login">登录</Link>
-            </Button>
-            <Button asChild variant="secondary">
-              <Link href="/register">注册</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-      <footer className="mt-8 text-sm text-gray-500">
-        <p>&copy; {new Date().getFullYear()} PicHub. All rights reserved.</p>
+        </div>
+
+        {/* 上传区域 */}
+        <UploadZone settings={settings} />
+
+        {/* 设置按钮 */}
+        <div className="mt-6">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Settings className="mr-2 h-4 w-4" />
+                图片处理设置
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>图片处理设置</DialogTitle>
+                <DialogDescription>
+                  配置您的图片上传和处理偏好。
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-6 py-4">
+                {/* 压缩设置 */}
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="compress-switch" className="flex flex-col gap-1">
+                    <span>压缩并转换为WebP</span>
+                    <span className="text-xs font-normal text-gray-500">移除元数据并显著减小文件大小</span>
+                  </Label>
+                  <Switch
+                    id="compress-switch"
+                    checked={settings.compress}
+                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, compress: checked }))}
+                  />
+                </div>
+                {/* 压缩质量滑块 */}
+                {settings.compress && (
+                    <div className="grid gap-2">
+                         <Label htmlFor="quality-slider">压缩质量: <span className="font-bold">{settings.quality}</span></Label>
+                         <Slider
+                            id="quality-slider"
+                            min={50}
+                            max={100}
+                            step={5}
+                            value={[settings.quality]}
+                            onValueChange={(value) => setSettings(prev => ({ ...prev, quality: value[0] }))}
+                         />
+                         <div className="flex justify-between text-xs text-gray-500">
+                             <span>较低质量</span>
+                             <span>高质量</span>
+                             <span>无损</span>
+                         </div>
+                    </div>
+                )}
+                 {/* 水印设置 (未来功能) */}
+                 <div className="opacity-50">
+                    <Label className="flex flex-col gap-1">
+                        <span>水印设置 (规划中)</span>
+                        <span className="text-xs font-normal text-gray-500">自动为上传的图片添加水印标识</span>
+                    </Label>
+                 </div>
+                 {/* 便捷功能 (未来功能) */}
+                 <div className="opacity-50">
+                    <Label className="flex flex-col gap-1">
+                        <span>便捷功能 (规划中)</span>
+                        <span className="text-xs font-normal text-gray-500">自动复制链接、自动删除等</span>
+                    </Label>
+                 </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </main>
+
+       {/* 页脚 */}
+       <footer className="text-center p-4 text-sm text-gray-500">
+        &copy; {new Date().getFullYear()} PicHub. Your Modern Image Hub.
       </footer>
-    </main>
+    </div>
   );
 }

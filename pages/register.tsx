@@ -63,7 +63,7 @@ export default function RegisterPage() {
     );
 }
 
-// Common styles for login/register pages
+// --- 核心修复：添加缺失的样式定义 ---
 const pageStyle: React.CSSProperties = { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f0f2f5' };
 const formStyle: React.CSSProperties = { padding: '40px', background: 'white', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', width: '400px' };
 const titleStyle: React.CSSProperties = { textAlign: 'center', marginBottom: '24px' };

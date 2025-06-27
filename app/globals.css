@@ -27,15 +27,18 @@
   }
 
   .dark {
-    /* ... 您可以添加暗黑模式的颜色变量 ... */
+    /* ... You can add dark mode color variables here ... */
   }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    /* --- CORE FIX: Use CSS variables directly instead of @apply --- */
+    border-color: hsl(var(--border));
   }
   body {
-    @apply bg-background text-foreground;
+    /* --- CORE FIX: Use CSS variables directly instead of @apply --- */
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
 }

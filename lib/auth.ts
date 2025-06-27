@@ -19,7 +19,6 @@ interface UserPayload {
  * @param req - Next.js 的请求对象
  * @returns 返回一个包含 user payload 的对象，如果验证失败则 user 为 null。
  */
-// --- 核心修复：简化了 req 的类型定义，使其更健壮 ---
 export async function verifyAuth(req: { cookies: NextApiRequest['cookies'] }) {
     const token = req.cookies?.[COOKIE_NAME];
 
@@ -28,8 +27,9 @@ export async function verifyAuth(req: { cookies: NextApiRequest['cookies'] }) {
     }
 
     try {
-        const verified = await jwtVerify(token, JWT_SECRET);
-        return { user: verified.payload as UserPayload };
+        // --- 核心修复：使用泛型参数来告知 jwtVerify payload 的类型 ---
+        const { payload } = await jwtVerify<UserPayload>(token, JWT_SECRET);
+        return { user: payload };
     } catch (err) {
         console.error('JWT Verification failed in verifyAuth:', err);
         return { user: null };

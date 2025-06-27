@@ -72,3 +72,11 @@ export default function LoginPage() {
     </div>
   );
 }
+
+// --- 核心修复：添加缺失的样式定义 ---
+const pageStyle: React.CSSProperties = { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f0f2f5' };
+const formStyle: React.CSSProperties = { padding: '40px', background: 'white', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', width: '400px' };
+const titleStyle: React.CSSProperties = { textAlign: 'center', marginBottom: '24px' };
+const inputGroupStyle: React.CSSProperties = { marginBottom: '16px' };
+const inputStyle: React.CSSProperties = { width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ddd', boxSizing: 'border-box', marginTop: '4px' };
+const buttonStyle: React.CSSProperties = { width: '100%', padding: '12px', borderRadius: '4px', border: 'none', background: '#1890ff', color: 'white', fontSize: '16px', cursor: 'pointer', marginTop: '8px' };

@@ -31,9 +31,9 @@ jobs:
           NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
         run: npm run build
         
-      # --- 核心修复：从打包命令中移除了 "public" 目录 ---
+      # 打包所有必要的文件，包括 public 目录
       - name: Create Deployment Package
-        run: tar -zcf deploy.tar.gz .next node_modules package.json prisma
+        run: tar -zcf deploy.tar.gz .next node_modules package.json prisma public
 
       - name: Add remote host to known_hosts
         run: |
@@ -49,6 +49,7 @@ jobs:
           source: "deploy.tar.gz"
           target: "/www/wwwroot/8.148.7.13"
 
+      # --- 核心修复：使用更安全、更健壮的服务器端脚本 ---
       - name: Unpack, Sync DB, and Restart App
         uses: appleboy/ssh-action@master
         with:
@@ -58,26 +59,33 @@ jobs:
           script: |
             cd /www/wwwroot/8.148.7.13
             
-            export PATH=/www/server/nodejs/v18.20.8/bin:$PATH
-            
-            shopt -s extglob
-            rm -rf !(.env.local|deploy.tar.gz)
-            echo "✅ Old files cleaned up."
+            # 1. 安全检查：如果部署包不存在，则立即报错并退出
+            if [ ! -f deploy.tar.gz ]; then
+              echo "❌ Deployment package deploy.tar.gz not found! Aborting."
+              exit 1
+            fi
 
+            # 2. 解压包裹，覆盖现有文件
             tar -zxf deploy.tar.gz
-            rm deploy.tar.gz
             echo "✅ New package unpacked."
 
+            # 3. 清理部署包
+            rm deploy.tar.gz
+            echo "✅ Deployment package cleaned up."
+            
+            # 4. 设置 Node.js 环境并执行后续命令
+            export PATH=/www/server/nodejs/v18.20.8/bin:$PATH
+            
             npx prisma db push --accept-data-loss
             echo "✅ Database schema synchronized."
 
             npx prisma generate
             echo "✅ Prisma Client generated on server."
             
+            # 5. 使用更安全的 PM2 命令：如果应用在运行则重启，否则就启动
             PM2_BIN=/www/server/nodejs/v18.20.8/bin/pm2
             NEXT_BIN=./node_modules/.bin/next
 
-            $PM2_BIN delete pichub || true
-            $PM2_BIN start $NEXT_BIN --name "pichub" -- start
+            $PM2_BIN restart pichub || $PM2_BIN start $NEXT_BIN --name "pichub"
             $PM2_BIN save
-            echo "✅ Application restarted successfully!"
+            echo "✅ Application restarted/started successfully!"

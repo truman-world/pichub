@@ -31,15 +31,26 @@ jobs:
           NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
         run: npm run build
         
-      # --- 核心修改：打包全新的目录结构 ---
+      # 打包全新的 "standalone" 目录结构
       - name: Create Deployment Package
         run: |
           mkdir -p deploy
-          cp -r .next/standalone deploy/
-          cp -r .next/static deploy/
-          cp -r public deploy/
+          if [ -d ".next/standalone" ]; then
+            cp -r .next/standalone/. deploy/
+          else
+            echo "Error: .next/standalone directory not found after build."
+            exit 1
+          fi
+          if [ -d ".next/static" ]; then
+            cp -r .next/static deploy/
+          fi
+          if [ -d "public" ]; then
+            cp -r public deploy/
+          fi
           cp package.json deploy/
-          cp prisma deploy/prisma
+          mkdir -p deploy/prisma
+          cp prisma/schema.prisma deploy/prisma/
+
           cd deploy
           tar -zcf ../deploy.tar.gz .
 
@@ -52,7 +63,7 @@ jobs:
           source: "deploy.tar.gz"
           target: "/www/wwwroot/8.148.7.13"
 
-      # --- 核心修改：全新的服务器端脚本 ---
+      # 全新的服务器端脚本，用于启动 "standalone" 应用
       - name: Unpack, Sync DB, and Restart App
         uses: appleboy/ssh-action@master
         with:
@@ -73,13 +84,13 @@ jobs:
             
             export PATH=/www/server/nodejs/v18.20.8/bin:$PATH
             
+            # 确保 Prisma 命令能找到 schema 文件
             npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss
             echo "✅ Database schema synchronized."
             
-            # --- 核心修改：使用新的启动命令 ---
+            # 使用新的 server.js 文件来启动应用
             PM2_BIN=/www/server/nodejs/v18.20.8/bin/pm2
             
-            # 传递环境变量给新的Node.js服务
             $PM2_BIN delete pichub || true
             $PM2_BIN start server.js --name "pichub" --env.PORT=3000
             $PM2_BIN save

@@ -21,6 +21,15 @@ jobs:
           node-version: '18'
           cache: 'npm'
 
+      # --- 诊断步骤 1：检查文件是否存在且内容正确 ---
+      - name: Verify next.config.mjs
+        run: |
+          echo "--- Listing files in root directory: ---"
+          ls -la
+          echo "--- Content of next.config.mjs: ---"
+          cat next.config.mjs
+          echo "------------------------------------"
+
       - name: Install Dependencies
         run: npm install
 
@@ -30,8 +39,14 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
         run: npm run build
+
+      # --- 诊断步骤 2：检查构建输出 ---
+      - name: Check Build Output
+        run: |
+          echo "--- Listing content of .next directory after build: ---"
+          ls -la .next/
+          echo "--------------------------------------------------------"
         
-      # 打包全新的 "standalone" 目录结构
       - name: Create Deployment Package
         run: |
           mkdir -p deploy
@@ -63,7 +78,6 @@ jobs:
           source: "deploy.tar.gz"
           target: "/www/wwwroot/8.148.7.13"
 
-      # 全新的服务器端脚本，用于启动 "standalone" 应用
       - name: Unpack, Sync DB, and Restart App
         uses: appleboy/ssh-action@master
         with:
@@ -84,11 +98,9 @@ jobs:
             
             export PATH=/www/server/nodejs/v18.20.8/bin:$PATH
             
-            # 确保 Prisma 命令能找到 schema 文件
             npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss
             echo "✅ Database schema synchronized."
             
-            # 使用新的 server.js 文件来启动应用
             PM2_BIN=/www/server/nodejs/v18.20.8/bin/pm2
             
             $PM2_BIN delete pichub || true

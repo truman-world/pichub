@@ -5,9 +5,9 @@
 <h1 align="center">PicHub - 新一代智能图床解决方案</h1>
 
 <p align="center">
-  <img alt="构建状态" src="https://img.shields.io/badge/build-passing-brightgreen">
-  <img alt="技术栈" src="https://img.shields.io/badge/teck-Next.js%20%7C%20Prisma%20%7C%20PostgreSQL-blue">
-  <img alt="许可证" src="https://img.shields.io/badge/license-MIT-green">
+  <img alt="构建与部署" src="https://img.shields.io/github/actions/workflow/status/truman-world/pichub/deploy.yml?branch=main&label=Build%20%26%20Deploy&logo=github">
+  <img alt="技术栈" src="https://img.shields.io/badge/teck-Next.js%20%7C%20Prisma%20%7C%20PostgreSQL-blue?logo=next.js">
+  <img alt="许可证" src="https://img.shields.io/github/license/truman-world/pichub?color=green">
 </p>
 
 **PicHub** 不仅仅是一个简单的图床。它是一个基于现代化技术栈构建的、高度可扩展、安全可控的私有化图像存储与管理平台，专为追求数据所有权、高可定制性和自动化运维的开发者与团队设计。
@@ -50,13 +50,12 @@ export interface StorageAdapter {
 * **全栈TypeScript**: 从前端组件到后端API，再到数据库模型，完整的类型安全链条不仅减少了运行时错误，还带来了无与伦比的IDE代码补全和重构体验。
 * **Prisma ORM**: 提供了类型安全的数据库查询，让您像操作JavaScript对象一样操作数据库，同时有效防止了SQL注入等常见安全问题。
 
-#### 3. 部署即服务 (Deployment-as-a-Service)
+#### 3. 部署架构：专业、稳健的“动静分离”模式
 
-我们为您配置的 GitHub Actions 工作流，已经超越了简单的“构建与部署”，它是一个完整的自动化运维流程：
-1.  **自动构建**: 在云端隔离环境中编译项目。
-2.  **自动打包**: 仅打包必要文件（`.next`, `node_modules`, `prisma`等），减小部署包体积。
-3.  **SSH安全部署**: 通过SSH密钥安全地将代码包传输到您的服务器。
-4.  **无中断重启**: 在服务器上，脚本会自动解压、同步数据库、并使用PM2平滑地重启应用，确保服务高可用。
+我们采用业界标准的 **Standalone** 部署模式，并配合 **Nginx** 实现高效的“动静分离”，这带来了：
+1.  **极致性能**: Nginx 直接处理所有静态资源（CSS, JS, 图片）的请求，速度极快，无需经过Node.js应用，大大降低了服务器负载。
+2.  **高可靠性**: 动态请求由后台的PM2守护进程管理的Node.js服务处理，即使应用崩溃也能被自动重启，确保服务高可用。
+3.  **清晰的职责划分**: Nginx负责“对外接待”和静态文件，Node.js应用专注于核心业务逻辑，架构清晰，易于维护和排错。
 
 ---
 
@@ -66,7 +65,7 @@ export interface StorageAdapter {
 * **后端**: Next.js API Routes / TypeScript
 * **数据库**: PostgreSQL / Prisma ORM
 * **认证**: JWT (JSON Web Tokens) / Cookies
-* **部署与运维**: GitHub Actions (CI/CD) / PM2 / Nginx (推荐)
+* **部署与运维**: GitHub Actions (CI/CD) / PM2 / Nginx (反向代理)
 
 ---
 
@@ -103,4 +102,3 @@ export interface StorageAdapter {
 ## 许可证 📜
 
 本项目采用 [MIT](https://opensource.org/licenses/MIT) 许可证。
-

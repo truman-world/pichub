@@ -21,15 +21,6 @@ jobs:
           node-version: '18'
           cache: 'npm'
 
-      # --- 诊断步骤 1：检查文件是否存在且内容正确 ---
-      - name: Verify next.config.mjs
-        run: |
-          echo "--- Listing files in root directory: ---"
-          ls -la
-          echo "--- Content of next.config.mjs: ---"
-          cat next.config.mjs
-          echo "------------------------------------"
-
       - name: Install Dependencies
         run: npm install
 
@@ -39,29 +30,23 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
         run: npm run build
-
-      # --- 诊断步骤 2：检查构建输出 ---
-      - name: Check Build Output
-        run: |
-          echo "--- Listing content of .next directory after build: ---"
-          ls -la .next/
-          echo "--------------------------------------------------------"
         
       - name: Create Deployment Package
         run: |
           mkdir -p deploy
-          if [ -d ".next/standalone" ]; then
-            cp -r .next/standalone/. deploy/
-          else
-            echo "Error: .next/standalone directory not found after build."
+          # 检查 standalone 目录是否存在
+          if [ ! -d ".next/standalone" ]; then
+            echo "Error: .next/standalone directory not found after build. Please ensure next.config.mjs contains 'output: \"standalone\"'."
             exit 1
           fi
-          if [ -d ".next/static" ]; then
-            cp -r .next/static deploy/
-          fi
+          
+          cp -r .next/standalone/. deploy/
+          cp -r .next/static deploy/
+          
           if [ -d "public" ]; then
             cp -r public deploy/
           fi
+          
           cp package.json deploy/
           mkdir -p deploy/prisma
           cp prisma/schema.prisma deploy/prisma/

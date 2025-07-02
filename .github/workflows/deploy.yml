@@ -34,25 +34,30 @@ jobs:
       - name: Create Deployment Package
         run: |
           mkdir -p deploy
-          # 检查 standalone 目录是否存在
           if [ ! -d ".next/standalone" ]; then
-            echo "Error: .next/standalone directory not found after build. Please ensure next.config.mjs contains 'output: \"standalone\"'."
+            echo "❌ Error: .next/standalone directory not found after build."
             exit 1
           fi
           
+          echo "✅ Copying files to deploy directory..."
           cp -r .next/standalone/. deploy/
           cp -r .next/static deploy/
-          
           if [ -d "public" ]; then
             cp -r public deploy/
           fi
-          
           cp package.json deploy/
           mkdir -p deploy/prisma
           cp prisma/schema.prisma deploy/prisma/
 
+          echo "✅ Creating tarball..."
           cd deploy
           tar -zcf ../deploy.tar.gz .
+          cd ..
+          
+          # --- 诊断步骤 1: 确认部署包已在构建环境中创建 ---
+          echo "--- Verifying deployment package in runner: ---"
+          ls -lh deploy.tar.gz
+          echo "---------------------------------------------"
 
       - name: Deploy Package to Server
         uses: appleboy/scp-action@master
@@ -72,20 +77,27 @@ jobs:
           script: |
             cd /www/wwwroot/8.148.7.13
             
+            # --- 诊断步骤 2: 确认部署包已到达服务器 ---
+            echo "--- Verifying deployment package on server: ---"
+            ls -lh
+            echo "---------------------------------------------"
+
             if [ ! -f deploy.tar.gz ]; then
-              echo "❌ Deployment package not found! Aborting."
+              echo "❌ Deployment package deploy.tar.gz not found on server! Aborting."
               exit 1
             fi
 
+            echo "✅ Unpacking new package..."
             tar -zxf deploy.tar.gz
             rm deploy.tar.gz
-            echo "✅ New package unpacked."
             
+            echo "✅ Setting up Node.js environment..."
             export PATH=/www/server/nodejs/v18.20.8/bin:$PATH
             
+            echo "✅ Synchronizing database schema..."
             npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss
-            echo "✅ Database schema synchronized."
             
+            echo "✅ Restarting application with PM2..."
             PM2_BIN=/www/server/nodejs/v18.20.8/bin/pm2
             
             $PM2_BIN delete pichub || true

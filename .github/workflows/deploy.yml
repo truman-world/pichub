@@ -1,6 +1,6 @@
 # .github/workflows/deploy.yml
 
-name: Build and Deploy to Aliyun ECS
+name: Build and Deploy Standalone App to Aliyun ECS
 
 on:
   push:
@@ -24,21 +24,24 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Build Project
+      - name: Build Standalone Project
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
         run: npm run build
         
-      # 打包所有必要的文件，包括 public 目录
+      # --- 核心修改：打包全新的目录结构 ---
       - name: Create Deployment Package
-        run: tar -zcf deploy.tar.gz .next node_modules package.json prisma public
-
-      - name: Add remote host to known_hosts
         run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H "${{ secrets.SERVER_HOST }}" >> ~/.ssh/known_hosts
+          mkdir -p deploy
+          cp -r .next/standalone deploy/
+          cp -r .next/static deploy/
+          cp -r public deploy/
+          cp package.json deploy/
+          cp prisma deploy/prisma
+          cd deploy
+          tar -zcf ../deploy.tar.gz .
 
       - name: Deploy Package to Server
         uses: appleboy/scp-action@master
@@ -49,7 +52,7 @@ jobs:
           source: "deploy.tar.gz"
           target: "/www/wwwroot/8.148.7.13"
 
-      # --- 核心修复：使用更安全、更健壮的服务器端脚本 ---
+      # --- 核心修改：全新的服务器端脚本 ---
       - name: Unpack, Sync DB, and Restart App
         uses: appleboy/ssh-action@master
         with:
@@ -59,33 +62,25 @@ jobs:
           script: |
             cd /www/wwwroot/8.148.7.13
             
-            # 1. 安全检查：如果部署包不存在，则立即报错并退出
             if [ ! -f deploy.tar.gz ]; then
-              echo "❌ Deployment package deploy.tar.gz not found! Aborting."
+              echo "❌ Deployment package not found! Aborting."
               exit 1
             fi
 
-            # 2. 解压包裹，覆盖现有文件
             tar -zxf deploy.tar.gz
-            echo "✅ New package unpacked."
-
-            # 3. 清理部署包
             rm deploy.tar.gz
-            echo "✅ Deployment package cleaned up."
+            echo "✅ New package unpacked."
             
-            # 4. 设置 Node.js 环境并执行后续命令
             export PATH=/www/server/nodejs/v18.20.8/bin:$PATH
             
-            npx prisma db push --accept-data-loss
+            npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss
             echo "✅ Database schema synchronized."
-
-            npx prisma generate
-            echo "✅ Prisma Client generated on server."
             
-            # 5. 使用更安全的 PM2 命令：如果应用在运行则重启，否则就启动
+            # --- 核心修改：使用新的启动命令 ---
             PM2_BIN=/www/server/nodejs/v18.20.8/bin/pm2
-            NEXT_BIN=./node_modules/.bin/next
-
-            $PM2_BIN restart pichub || $PM2_BIN start $NEXT_BIN --name "pichub"
+            
+            # 传递环境变量给新的Node.js服务
+            $PM2_BIN delete pichub || true
+            $PM2_BIN start server.js --name "pichub" --env.PORT=3000
             $PM2_BIN save
             echo "✅ Application restarted/started successfully!"

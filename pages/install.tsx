@@ -1,4 +1,6 @@
 // pages/install.tsx
+import type { GetServerSidePropsContext } from 'next';
+import prisma from '@/lib/prisma';
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/router';
 
@@ -40,9 +42,9 @@ export default function InstallPage() {
         throw new Error(data.message || '安装失败');
       }
 
-      // 安装成功
       alert('恭喜！系统安装成功。您现在将被重定向到首页。');
-      router.push('/');
+      // 使用 window.location.href 进行强制跳转，可以更好地处理 basePath
+      window.location.href = '/';
 
     } catch (err: any) {
       setError(err.message);
@@ -84,22 +86,24 @@ export default function InstallPage() {
   );
 }
 
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '10px',
-  borderRadius: '4px',
-  border: '1px solid #ddd',
-  boxSizing: 'border-box',
-  marginTop: '4px'
-};
+const inputStyle: React.CSSProperties = { width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ddd', boxSizing: 'border-box', marginTop: '4px' };
+const buttonStyle: React.CSSProperties = { width: '100%', padding: '12px', borderRadius: '4px', border: 'none', background: '#1890ff', color: 'white', fontSize: '16px', cursor: 'pointer' };
 
-const buttonStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '12px',
-  borderRadius: '4px',
-  border: 'none',
-  background: '#1890ff',
-  color: 'white',
-  fontSize: '16px',
-  cursor: 'pointer'
-};
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  // --- 核心修复：在这里进行安装检查 ---
+  const admin = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
+  if (admin) {
+    // 如果已安装，直接从服务器重定向到首页
+    return {
+      redirect: {
+        destination: '/', // Next.js 会自动处理 basePath
+        permanent: false,
+      },
+    };
+  }
+  // --- 检查结束 ---
+
+  return {
+    props: {}, // 安装页面不需要 props
+  };
+}

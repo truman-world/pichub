@@ -29,28 +29,21 @@ jobs:
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
           echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
           echo "NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}" >> .env
-          echo "✅ Created .env file from secrets."
 
       - name: Build Standalone Project
         run: npm run build
         
-      # --- 核心修改：打包全新的“动静分离”目录结构 ---
       - name: Create Deployment Package
         run: |
           mkdir -p deploy
-          # 拷贝独立运行所需的核心文件
           cp -r .next/standalone/. deploy/
-          # 拷贝所有静态资源
           cp -r .next/static deploy/.next/static
-          # 拷贝 public 目录（如果存在）
           if [ -d "public" ]; then
             cp -r public deploy/public
           fi
-          # 拷贝 .env 和 prisma schema
           cp .env deploy/
           mkdir -p deploy/prisma
           cp prisma/schema.prisma deploy/prisma/
-
           cd deploy
           tar -zcf ../deploy.tar.gz .
 
@@ -63,7 +56,6 @@ jobs:
           source: "deploy.tar.gz"
           target: "/www/wwwroot/8.148.7.13"
 
-      # --- 核心修改：全新的服务器端脚本 ---
       - name: Unpack, Sync DB, and Restart App
         uses: appleboy/ssh-action@master
         with:
@@ -84,16 +76,13 @@ jobs:
             
             export PATH=/www/server/nodejs/v18.20.8/bin:$PATH
             
-            # 从我们部署的 .env 文件加载环境变量
             if [ -f .env ]; then
               export $(grep -v '^#' .env | xargs)
-              echo "✅ Sourced environment variables from .env file."
             fi
 
             npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss
             echo "✅ Database schema synchronized."
             
-            # --- 核心修改：使用新的 server.js 文件来启动应用 ---
             PM2_BIN=/www/server/nodejs/v18.20.8/bin/pm2
             
             $PM2_BIN delete pichub || true

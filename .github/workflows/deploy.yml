@@ -24,40 +24,25 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      # --- 核心修复 1: 动态创建 .env 文件 ---
-      # 在构建前，先根据 GitHub Secrets 创建一个 .env 文件
-      - name: Create Environment File
+      - name: Create .env file
         run: |
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
           echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
           echo "NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}" >> .env
-          echo "✅ Created .env file from secrets."
 
       - name: Build Standalone Project
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
         run: npm run build
         
       - name: Create Deployment Package
         run: |
           mkdir -p deploy
-          if [ ! -d ".next/standalone" ]; then
-            echo "Error: .next/standalone directory not found after build."
-            exit 1
-          fi
-          
           cp -r .next/standalone/. deploy/
           cp -r .next/static deploy/
-          if [ -d "public" ]; then
-            cp -r public deploy/
-          fi
+          if [ -d "public" ]; then cp -r public deploy/; fi
           cp package.json deploy/
-          cp .env deploy/ # 将我们刚刚创建的 .env 文件打包进去
+          cp .env deploy/
           mkdir -p deploy/prisma
           cp prisma/schema.prisma deploy/prisma/
-
           cd deploy
           tar -zcf ../deploy.tar.gz .
 
@@ -70,8 +55,7 @@ jobs:
           source: "deploy.tar.gz"
           target: "/www/wwwroot/8.148.7.13"
 
-      # --- 核心修复 2: 全新的、健壮的服务器端脚本 ---
-      - name: Unpack, Sync DB, and Restart App
+      - name: Unpack, Fix Permissions, and Restart App
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -89,27 +73,25 @@ jobs:
             rm deploy.tar.gz
             echo "✅ New package unpacked."
             
+            # --- 终极核心修复 2: 修复文件权限 ---
+            # 将所有文件的所有者设置为 www:www，并设置正确的读写权限
+            chown -R www:www .
+            find . -type d -exec chmod 755 {} \;
+            find . -type f -exec chmod 644 {} \;
+            echo "✅ File permissions corrected for Nginx user."
+
             export PATH=/www/server/nodejs/v18.20.8/bin:$PATH
             
-            # 从我们部署的 .env 文件加载环境变量
             if [ -f .env ]; then
               export $(grep -v '^#' .env | xargs)
-              echo "✅ Sourced environment variables from .env file."
-            else
-              echo "⚠️ Warning: .env file not found. Prisma command might fail."
             fi
 
-            # 现在这个命令可以找到 DATABASE_URL 了
             npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss
             echo "✅ Database schema synchronized."
             
             PM2_BIN=/www/server/nodejs/v18.20.8/bin/pm2
             
             $PM2_BIN delete pichub || true
-            
-            # 使用正确的 PM2 启动语法
-            # Node.js 应用会自动读取 .env 文件
             $PM2_BIN start server.js --name "pichub"
-            
             $PM2_BIN save
             echo "✅ Application restarted/started successfully!"

@@ -2,62 +2,50 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// 定义中间件应该在哪些路径上运行
 export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api (API routes)
+     * - api (API routes) - we handle API protection inside the routes themselves.
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * * This is crucial to prevent the middleware from running on API routes
-     * that it might call, which would cause an infinite loop.
      */
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 };
 
 export async function middleware(request: NextRequest) {
-  // 获取完整的请求URL，用于 fetch
-  const absoluteUrl = request.nextUrl.clone();
-  absoluteUrl.pathname = '/api/install/status';
+  // --- 核心修复：使用 request.url 作为基准来构建绝对URL ---
+  // 这可以确保 fetch 请求能正确地包含 basePath (例如 /pichub)
+  const statusApiUrl = new URL('/api/install/status', request.url);
   
   try {
-    // --- 核心修复 ---
-    // 不再直接访问数据库，而是调用我们新建的 API 接口。
-    // fetch 会在服务器端发出一个请求到自己的API。
-    const response = await fetch(absoluteUrl);
+    const response = await fetch(statusApiUrl);
     
     if (!response.ok) {
-        // 如果API请求本身失败，我们假设未安装，并记录错误
-        console.error(`API status check failed with status: ${response.status}`);
-        // 强制重定向到安装页
-        if (request.nextUrl.pathname !== '/install') {
-            return NextResponse.redirect(new URL('/install', request.url));
-        }
-        return NextResponse.next();
+      throw new Error(`API status check failed with status: ${response.status}`);
     }
     
     const { installed } = await response.json();
-    const { pathname } = request.nextUrl;
+    const { pathname } = request.nextUrl; // pathname 包含 basePath, e.g., /pichub/install
 
-    // 根据从API获取的状态进行判断
-    if (!installed && pathname !== '/install') {
-      console.log(`[Middleware] API reported Not Installed. Redirecting from ${pathname} to /install`);
-      return NextResponse.redirect(new URL('/install', request.url));
+    // 如果未安装，并且当前路径不是安装页，则重定向到安装页
+    if (!installed && pathname !== '/pichub/install') {
+      return NextResponse.redirect(new URL('/pichub/install', request.url));
     }
 
-    if (installed && pathname === '/install') {
-      console.log(`[Middleware] API reported Installed. Redirecting from ${pathname} to /`);
-      return NextResponse.redirect(new URL('/', request.url));
+    // 如果已安装，但用户试图访问安装页，则重定向到首页
+    if (installed && pathname === '/pichub/install') {
+      return NextResponse.redirect(new URL('/pichub', request.url));
     }
 
   } catch (error) {
     console.error('[Middleware] Fetch error:', error);
     // 在 fetch 本身就失败的极端情况下 (例如网络问题)，也重定向到安装页
-    if (request.nextUrl.pathname !== '/install') {
-      return NextResponse.redirect(new URL('/install', request.url));
+    const { pathname } = request.nextUrl;
+    if (pathname !== '/pichub/install') {
+        return NextResponse.redirect(new URL('/pichub/install', request.url));
     }
   }
 

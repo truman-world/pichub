@@ -33,12 +33,24 @@ export default function HomePage({ user, initialImages }: HomePageProps) {
 }
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
+  // --- 核心修复：在这里进行安装检查 ---
+  const admin = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
+  if (!admin) {
+    // 如果未安装，直接从服务器重定向到安装页
+    return {
+      redirect: {
+        destination: '/install', // Next.js 会自动处理 basePath
+        permanent: false,
+      },
+    };
+  }
+  // --- 检查结束 ---
+
   const auth = await verifyAuth(context.req);
   let user = null;
   let initialImages: Image[] = [];
 
   if (auth.user) {
-    // 如果用户登录，获取完整的用户信息和他们的图片历史
     user = await prisma.user.findUnique({
       where: { id: auth.user.userId },
       select: { id: true, username: true, email: true, role: true }
@@ -48,7 +60,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       initialImages = await prisma.image.findMany({
         where: { userId: user.id },
         orderBy: { createdAt: 'desc' },
-        take: 10, // 初始加载10张
+        take: 10,
       });
     }
   }
@@ -56,7 +68,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   return {
     props: {
       user,
-      initialImages: JSON.parse(JSON.stringify(initialImages)), // 序列化Date对象
+      initialImages: JSON.parse(JSON.stringify(initialImages)),
     },
   };
 }

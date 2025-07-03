@@ -24,6 +24,15 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
+      # --- 核心修复 1: 动态创建 .env 文件 ---
+      # 在构建前，先根据 GitHub Secrets 创建一个 .env 文件
+      - name: Create Environment File
+        run: |
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+          echo "NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}" >> .env
+          echo "✅ Created .env file from secrets."
+
       - name: Build Standalone Project
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -45,10 +54,7 @@ jobs:
             cp -r public deploy/
           fi
           cp package.json deploy/
-          # 复制 .env 文件到部署包中
-          if [ -f ".env.local" ]; then
-            cp .env.local deploy/.env
-          fi
+          cp .env deploy/ # 将我们刚刚创建的 .env 文件打包进去
           mkdir -p deploy/prisma
           cp prisma/schema.prisma deploy/prisma/
 
@@ -64,7 +70,7 @@ jobs:
           source: "deploy.tar.gz"
           target: "/www/wwwroot/8.148.7.13"
 
-      # --- 核心修复：全新的、健壮的服务器端脚本 ---
+      # --- 核心修复 2: 全新的、健壮的服务器端脚本 ---
       - name: Unpack, Sync DB, and Restart App
         uses: appleboy/ssh-action@master
         with:
@@ -85,7 +91,7 @@ jobs:
             
             export PATH=/www/server/nodejs/v18.20.8/bin:$PATH
             
-            # --- 核心修复 1: 从 .env 文件加载环境变量 ---
+            # 从我们部署的 .env 文件加载环境变量
             if [ -f .env ]; then
               export $(grep -v '^#' .env | xargs)
               echo "✅ Sourced environment variables from .env file."
@@ -101,9 +107,9 @@ jobs:
             
             $PM2_BIN delete pichub || true
             
-            # --- 核心修复 2: 使用正确的 PM2 启动语法 ---
-            # Node.js 应用会自动读取 process.env.PORT
-            PORT=3000 $PM2_BIN start server.js --name "pichub"
+            # 使用正确的 PM2 启动语法
+            # Node.js 应用会自动读取 .env 文件
+            $PM2_BIN start server.js --name "pichub"
             
             $PM2_BIN save
             echo "✅ Application restarted/started successfully!"

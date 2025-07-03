@@ -28,9 +28,10 @@ export default function Header({ user }: HeaderProps) {
                                   管理后台
                                 </Link>
                             )}
-                            <a href="/api/logout" className="text-sm font-medium text-slate-600 hover:text-slate-800">
+                            {/* --- 核心修复：将 <a> 标签改为 <Link> 以支持 basePath --- */}
+                            <Link href="/api/logout" className="text-sm font-medium text-slate-600 hover:text-slate-800">
                                 退出登录
-                            </a>
+                            </Link>
                         </div>
                     ) : (
                         <div className="flex items-center gap-2">

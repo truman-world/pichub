@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // 这一行是解决 ".next/standalone directory not found" 错误的唯一关键
+  // --- 核心修改：告诉Next.js应用的基础路径是 /pichub ---
+  basePath: '/pichub',
+  
+  // 保持独立版输出，这是最佳实践
   output: 'standalone',
 };
 

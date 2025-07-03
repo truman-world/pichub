@@ -1,9 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // --- 核心修改：告诉Next.js应用的基础路径是 /pichub ---
-  basePath: '/pichub',
-  
-  // 保持独立版输出，这是最佳实践
+  // 我们只需要这一个配置，告诉Next.js生成适合“动静分离”部署的输出。
   output: 'standalone',
 };
 

@@ -74,12 +74,14 @@ jobs:
             rm deploy.tar.gz
             echo "✅ New package unpacked."
             
+            # --- 核心修复：在 server.js 顶部自动注入 dotenv 配置 ---
+            # 这确保了应用在启动时就能加载 .env 文件
+            sed -i "1s;^;require('dotenv').config();\n;" server.js
+            echo "✅ Patched server.js with dotenv."
+
             export PATH=/www/server/nodejs/v18.20.8/bin:$PATH
             
-            if [ -f .env ]; then
-              export $(grep -v '^#' .env | xargs)
-            fi
-
+            # 现在这个命令可以找到 DATABASE_URL 了，因为它被 dotenv 加载了
             npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss
             echo "✅ Database schema synchronized."
             

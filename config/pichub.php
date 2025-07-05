@@ -72,6 +72,7 @@ return [
         'allowed_domains' => explode(',', env('ALLOWED_DOMAINS', '')),
         'clamav_enabled' => env('CLAMAV_ENABLED', false),
         'clamav_socket' => env('CLAMAV_SOCKET', '/var/run/clamav/clamd.ctl'),
+        'ip_whitelist' => [],
     ],
     
     /*

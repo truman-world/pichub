@@ -146,12 +146,14 @@ PicHub 提供多层次的安全防护措施，确保图像数据的安全性：
 ### 💼 企业级功能
 
 <details>
-<summary><b>👥 强大的用户系统</b></summary>
+### 👥 强大的用户系统
 
+PicHub 提供了细粒度的权限管理系统，支持灵活的角色和权限分配。通过用户角色和权限控制，您可以根据需求灵活设置不同级别的访问和操作权限。
+
+#### **用户权限系统示例**
 ```php
-// PicHub 的用户权限系统示例
 class UserPermissionSystem {
-    // 细粒度的权限控制
+    // 权限控制
     const PERMISSIONS = [
         'images.upload' => '上传图片',
         'images.delete' => '删除图片',
@@ -160,48 +162,56 @@ class UserPermissionSystem {
         'api.access' => 'API 访问',
         'admin.panel' => '管理后台'
     ];
-    
-    // 灵活的角色定义
+
+    // 角色定义
     const ROLES = [
-        'guest' => ['images.view'],
-        'user' => ['images.*', 'albums.*'],
-        'vip' => ['images.*', 'albums.*', 'api.*'],
-        'admin' => ['*']
+        'guest' => ['images.view'],  // 游客：只能查看图片
+        'user' => ['images.*', 'albums.*'],  // 普通用户：上传和管理自己的图片与相册
+        'vip' => ['images.*', 'albums.*', 'api.*'],  // VIP：全面访问图片、相册和API
+        'admin' => ['*']  // 管理员：所有权限
     ];
 }
+功能特点：
+多角色支持：支持游客、普通用户、VIP 和管理员等角色。
 
-多租户架构：支持企业级的多租户隔离  
-SSO 单点登录：集成 LDAP、OAuth2、SAML 等协议  
-审计日志：详细记录每一次操作，满足合规要求
+细粒度权限：每个操作和资源可以根据角色进行精细化控制。
+
+审计日志：详细记录所有操作，确保合规性和可追溯性。
+
+多租户架构与企业级功能
+多租户架构：支持企业级的多租户隔离，保证不同企业数据的安全性。
+
+SSO 单点登录：集成 LDAP、OAuth2、SAML 等协议，提升安全性和用户体验。
+
+审计日志：每次操作都会详细记录，支持合规性审计和异常监控。
+
+<details> <summary><b>💰 完整的商业化能力</b></summary>
+灵活的计费模式：
+
+存储空间计费
+
+流量带宽计费
+
+API 调用次数计费
+
+高级功能订阅
+
+支付系统集成：
+
+支持支付宝、微信支付、PayPal、Stripe、加密货币支付
+
+营销工具：
+
+优惠券系统
+
+推广返利
+
+会员等级体系
 
 </details>
 
-<details>
-<summary><b>💰 完整的商业化能力</b></summary>
-
-- **灵活的计费模式**：
-  - 存储空间计费
-  - 流量带宽计费
-  - API 调用次数计费
-  - 高级功能订阅
-
-- **支付系统集成**：
-  - 支持支付宝、微信支付、PayPal、Stripe、加密货币支付
-
-- **营销工具**：
-  - 优惠券系统
-  - 推广返利
-  - 会员等级体系
-
-</details>
-
----
-
-## 🚀 快速开始
-
-### 🐳 Docker 一键部署（推荐）
-
-```bash
+🚀 快速开始
+🐳 Docker 一键部署（推荐）
 # 1. 下载 docker-compose.yml
 curl -O https://raw.githubusercontent.com/pichub/pichub/main/docker-compose.yml
 
@@ -210,6 +220,7 @@ docker-compose up -d
 
 # 3. 访问安装向导
 open http://localhost:8000/install
+
 📦 传统部署方式
 <details> <summary>查看详细步骤</summary>
 # 1. 环境要求检查
@@ -249,7 +260,6 @@ php artisan queue:work --daemon &
 # 9. 配置定时任务
 (crontab -l ; echo "* * * * * cd /path/to/pichub && php artisan schedule:run >> /dev/null 2>&1") | crontab -
 </details>
-
 🤝 参与贡献
 我们欢迎所有形式的贡献！无论是报告 Bug、提出新功能、改进文档还是提交代码。
 

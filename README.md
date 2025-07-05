@@ -16,6 +16,7 @@
   </p>
   
   [立即体验](#-快速开始) • [核心优势](#-核心技术优势) • [功能特性](#-功能特性) • [部署指南](#-部署指南) • [开发文档](#-开发者指南)
+  
 </div>
 
 ---
@@ -170,8 +171,8 @@ class UserPermissionSystem {
         'admin' => ['*']  // 管理员：所有权限
     ];
 }
+功能特点：
 
-功能特点
 多角色支持：支持游客、普通用户、VIP 和管理员等角色，每个角色可以访问不同功能。
 
 细粒度权限：每个操作和资源可以根据角色进行精细化控制，确保用户权限的精准管理。
@@ -179,23 +180,14 @@ class UserPermissionSystem {
 审计日志：详细记录所有用户操作，确保合规性和可追溯性。
 
 多租户架构与企业级功能
+
 多租户架构：支持企业级的多租户隔离，确保不同企业数据的安全性。
 
 SSO 单点登录：集成 LDAP、OAuth2、SAML 等协议，提升安全性和用户体验。
 
 审计日志：每次操作都会详细记录，支持合规性审计和异常监控。
 
-<details> <summary><b>💰 完整的商业化能力</b></summary>
-灵活的计费模式：
-
-存储空间计费
-
-流量带宽计费
-
-API 调用次数计费
-
-高级功能订阅
-
+<details> <summary><b>💰 完整的商业化能力</b></summary> - 灵活的计费模式： - 存储空间计费 - 流量带宽计费 - API 调用次数计费 - 高级功能订阅
 支付系统集成：
 
 支持支付宝、微信支付、PayPal、Stripe、加密货币支付
@@ -209,7 +201,6 @@ API 调用次数计费
 会员等级体系
 
 </details>
-
 🚀 快速开始
 
 🐳 Docker 一键部署（推荐）
@@ -221,7 +212,9 @@ docker-compose up -d
 
 # 3. 访问安装向导
 open http://localhost:8000/install
+
 📦 传统部署方式
+
 <details> <summary>查看详细步骤</summary>
 # 1. 环境要求检查
 php -v  # 需要 PHP >= 8.2
@@ -259,11 +252,14 @@ php artisan queue:work --daemon &
 
 # 9. 配置定时任务
 (crontab -l ; echo "* * * * * cd /path/to/pichub && php artisan schedule:run >> /dev/null 2>&1") | crontab -
+
 </details>
 🤝 参与贡献
+
 我们欢迎所有形式的贡献！无论是报告 Bug、提出新功能、改进文档还是提交代码。
 
 如何贡献：
+
 Fork 本仓库
 
 创建功能分支 (git checkout -b feature/AmazingFeature)
@@ -275,9 +271,11 @@ Fork 本仓库
 创建 Pull Request
 
 📄 开源协议
+
 本项目基于 MIT License 开源，您可以自由使用、修改和分发。
 
 🙏 鸣谢
+
 核心贡献者：
 
 <table> <tr> <td align="center"> <img src="https://via.placeholder.com/100" width="100px;" alt=""/> <br /><sub><b>张三</b></sub> <br />核心开发者 </td> <td align="center"> <img src="https://via.placeholder.com/100" width="100px;" alt=""/> <br /><sub><b>李四</b></sub> <br />UI/UX 设计师 </td> <td align="center"> <img src="https://via.placeholder.com/100" width="100px;" alt=""/> <br /><sub><b>王五</b></sub> <br />文档维护者 </td> </tr> </table>

@@ -1,5 +1,3 @@
-mkdir -p resources/views
-cat > resources/views/welcome.blade.php << 'EOF'
 @extends('layouts.app')
 
 @section('content')
@@ -28,4 +26,3 @@ cat > resources/views/welcome.blade.php << 'EOF'
     </div>
 </div>
 @endsection
-EOF

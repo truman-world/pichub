@@ -4,7 +4,6 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,6 +21,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // Prevent lazy loading in production
-        Model::preventLazyLoadingIf(!app()->isProduction());
+        Model::preventLazyLoadingIf(!$this->app->isProduction());
     }
 }

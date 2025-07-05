@@ -1,0 +1,88 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* Custom Font Integration */
+@font-face {
+    font-family: 'Source Han Sans';
+    src: url('/fonts/SourceHanSansCN-Regular.otf') format('opentype');
+    font-weight: 400;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Source Han Sans';
+    src: url('/fonts/SourceHanSansCN-Medium.otf') format('opentype');
+    font-weight: 500;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Source Han Sans';
+    src: url('/fonts/SourceHanSansCN-Bold.otf') format('opentype');
+    font-weight: 700;
+    font-display: swap;
+}
+
+/* Base Styles */
+@layer base {
+    body {
+        font-family: 'Inter', 'Source Han Sans', system-ui, -apple-system, sans-serif;
+    }
+    
+    /* Smooth scrolling */
+    html {
+        scroll-behavior: smooth;
+    }
+    
+    /* Focus styles */
+    *:focus {
+        outline: none;
+    }
+    
+    *:focus-visible {
+        @apply ring-2 ring-blue-500 ring-offset-2;
+    }
+}
+
+/* Component Styles */
+@layer components {
+    /* Loading skeleton */
+    .skeleton {
+        @apply animate-pulse bg-gray-200 dark:bg-gray-700 rounded;
+    }
+    
+    /* Floating label transitions */
+    .floating-label {
+        @apply transition-all duration-200 ease-in-out;
+    }
+}
+
+/* Utility Styles */
+@layer utilities {
+    /* Hide scrollbar */
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    
+    /* Custom animations */
+    @keyframes slide-up {
+        from {
+            transform: translateY(10px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+    
+    .animate-slide-up {
+        animation: slide-up 0.3s ease-out;
+    }
+}

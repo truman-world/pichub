@@ -16,7 +16,6 @@
   </p>
   
   [立即体验](#-快速开始) • [核心优势](#-核心技术优势) • [功能特性](#-功能特性) • [部署指南](#-部署指南) • [开发文档](#-开发者指南)
-  
 </div>
 
 ---
@@ -171,6 +170,7 @@ class UserPermissionSystem {
         'admin' => ['*']  // 管理员：所有权限
     ];
 }
+
 功能特点
 多角色支持：支持游客、普通用户、VIP 和管理员等角色，每个角色可以访问不同功能。
 
@@ -211,8 +211,8 @@ API 调用次数计费
 </details>
 
 🚀 快速开始
-🐳 Docker 一键部署（推荐）
 
+🐳 Docker 一键部署（推荐）
 # 1. 下载 docker-compose.yml
 curl -O https://raw.githubusercontent.com/pichub/pichub/main/docker-compose.yml
 
@@ -221,7 +221,6 @@ docker-compose up -d
 
 # 3. 访问安装向导
 open http://localhost:8000/install
-
 📦 传统部署方式
 <details> <summary>查看详细步骤</summary>
 # 1. 环境要求检查
@@ -260,7 +259,6 @@ php artisan queue:work --daemon &
 
 # 9. 配置定时任务
 (crontab -l ; echo "* * * * * cd /path/to/pichub && php artisan schedule:run >> /dev/null 2>&1") | crontab -
-
 </details>
 🤝 参与贡献
 我们欢迎所有形式的贡献！无论是报告 Bug、提出新功能、改进文档还是提交代码。
@@ -309,4 +307,3 @@ Intervention Image - PHP 图像处理库
 📺 B站：PicHub官方账号
 
 <div align="center"> <p> <b>🌟 如果 PicHub 对您有帮助，请给我们一个 Star！🌟</b> </p> <p> <i>Made with ❤️ by PicHub Team</i> </p> <p> <sub>Copyright © 2024 PicHub. All rights reserved.</sub> </p> </div> ```
-

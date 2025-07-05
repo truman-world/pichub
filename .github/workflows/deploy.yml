@@ -20,10 +20,15 @@ jobs:
           extensions: mbstring, xml, ctype, fileinfo, pdo, pdo_pgsql
           tools: composer
 
-      - name: Install Composer Dependencies
-        run: composer install --no-dev --optimize-autoloader
+      - name: Copy .env.example
+        # 这一步确保了即使没有 .env 文件，Laravel也能找到配置模板
+        run: php -r "file_exists('.env') || copy('.env.example', '.env');"
 
-      - name: Prepare .env file
+      - name: Install Composer Dependencies
+        # 我们在这里忽略平台要求，以避免在某些构建环境中出现问题
+        run: composer install --no-dev --optimize-autoloader --ignore-platform-reqs
+
+      - name: Prepare .env file for deployment
         run: |
           echo "APP_NAME=PicHub" > .env
           echo "APP_ENV=production" >> .env
@@ -62,11 +67,16 @@ jobs:
             
             export PATH=/www/server/php/82/bin:$PATH
 
+            # --- 核心修复：在这里执行Laravel的收尾工作 ---
+            # 运行数据库迁移
             php artisan migrate --force
+
+            # 优化配置和路由缓存
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
 
+            # 设置正确的文件权限
             chown -R www:www .
             chmod -R 755 storage bootstrap/cache
 

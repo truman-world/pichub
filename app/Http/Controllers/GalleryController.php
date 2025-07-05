@@ -1,18 +1,12 @@
 <?php
 
-declare(strict_types=1);
-
 namespace App\Http\Controllers;
 
-use Illuminate\View\View;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Foundation\Validation\ValidatesRequests;
+use Illuminate\Routing\Controller as BaseController;
 
-class GalleryController extends Controller
+class Controller extends BaseController
 {
-    /**
-     * Display the gallery page.
-     */
-    public function index(): View
-    {
-        return view('gallery.index');
-    }
+    use AuthorizesRequests, ValidatesRequests;
 }

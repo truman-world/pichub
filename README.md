@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://via.placeholder.com/200x200" alt="PicHub Logo" width="200" height="200">
+  <img src="./logo.png" alt="PicHub Logo" width="200" height="200">
   
   # PicHub - 企业级图像资产管理平台
   
@@ -26,7 +26,6 @@
 PicHub 不仅仅是一个图床工具，它是一个**完整的图像生态系统解决方案**。通过采用现代化的技术栈和企业级的架构设计，PicHub 为个人开发者、创业团队和大型企业提供了一个可靠、高效、易扩展的图像管理平台。
 
 ### 💡 核心价值主张
-
 传统图床的痛点                 PicHub 的解决方案
 ─────────────────             ─────────────────
 ❌ 性能瓶颈，响应缓慢          ✅ 毫秒级响应，支持百万级并发
@@ -65,7 +64,6 @@ PHP 驱动着全球 78% 的网站，Laravel 是其中最受欢迎的框架：
 </table>
 
 ### 📊 性能对比
-
 基准测试结果（每秒请求数 RPS）
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PicHub (Laravel 11 + OPcache + Redis)    ████████████ 12,000
@@ -80,7 +78,6 @@ Python Django 图床                        ██████████ 320
 Ruby on Rails 图床                        ████████████ 384
 
 ### 🛡️ 安全架构
-
 ┌─────────────────────────────────────────────────────────────────┐
 │                        安全防护层级                               │
 ├─────────────────────────────────────────────────────────────────┤
@@ -185,12 +182,10 @@ PayPal、Stripe 国际支付
 
 
 </details>
-
 🔧 技术特性
 <details>
 <summary><b>🗄️ 灵活的存储方案</b></summary>
-
-// PicHub 的存储适配器模式
+php// PicHub 的存储适配器模式
 interface StorageAdapter {
     public function store($file, $path);
     public function delete($path);
@@ -236,10 +231,9 @@ CDN 边缘缓存静态资源
 
 
 </details>
-
 🚀 快速开始
 🐳 Docker 一键部署（推荐）
-# 1. 下载 docker-compose.yml
+bash# 1. 下载 docker-compose.yml
 curl -O https://raw.githubusercontent.com/pichub/pichub/main/docker-compose.yml
 
 # 2. 启动服务（自动完成所有配置）
@@ -252,7 +246,7 @@ open http://localhost:8000/install
 📦 传统部署方式
 <details>
 <summary>查看详细步骤</summary>
-# 1. 环境要求检查
+bash# 1. 环境要求检查
 php -v  # 需要 PHP >= 8.2
 mysql --version  # 需要 MySQL >= 8.0
 redis-server --version  # 需要 Redis >= 6.0
@@ -288,7 +282,6 @@ php artisan queue:work --daemon &
 
 # 9. 配置定时任务
 (crontab -l ; echo "* * * * * cd /path/to/pichub && php artisan schedule:run >> /dev/null 2>&1") | crontab -
-
 </details>
 ☁️ 云平台部署
 <details>
@@ -305,7 +298,7 @@ php artisan queue:work --daemon &
 </details>
 <details>
 <summary><b>Vercel/Railway 部署</b></summary>
-# Vercel 一键部署
+bash# Vercel 一键部署
 vercel --prod
 
 # Railway 一键部署
@@ -315,7 +308,7 @@ railway up
 🔌 API 集成示例
 <details>
 <summary><b>JavaScript/Node.js</b></summary>
-// 使用 PicHub API 上传图片
+javascript// 使用 PicHub API 上传图片
 const PicHub = require('pichub-sdk');
 
 const client = new PicHub({
@@ -335,12 +328,10 @@ const result = await client.upload({
 
 console.log('图片URL:', result.url);
 console.log('缩略图:', result.thumbnail);
-
 </details>
 <details>
 <summary><b>Python</b></summary>
-
-import pichub
+pythonimport pichub
 
 # 初始化客户端
 client = pichub.Client(
@@ -362,9 +353,8 @@ with open('image.jpg', 'rb') as f:
 print(f'图片URL: {result.url}')
 print(f'缩略图: {result.thumbnail}')
 </details>
-
 🎨 主题定制
-// 在 config/pichub.php 中自定义主题
+php// 在 config/pichub.php 中自定义主题
 return [
     'theme' => [
         'primary_color' => '#FF2D20',    // 主色调
@@ -373,7 +363,32 @@ return [
         'custom_css' => '/css/custom.css', // 自定义样式
     ]
 ];
+🔧 插件开发
+php// 创建自定义存储插件示例
+namespace App\Plugins\Storage;
 
+use PicHub\Contracts\StorageAdapter;
+
+class MyCustomStorage implements StorageAdapter
+{
+    public function store($file, $path)
+    {
+        // 实现自定义存储逻辑
+    }
+    
+    public function delete($path)
+    {
+        // 实现删除逻辑
+    }
+    
+    public function getUrl($path)
+    {
+        // 返回访问 URL
+    }
+}
+
+// 注册插件
+app()->bind('storage.mycustom', MyCustomStorage::class);
 🗺️ 发展路线图
 ✅ 已完成功能
 
@@ -410,7 +425,7 @@ Fork 本仓库
 创建 Pull Request
 
 开发环境搭建
-# 克隆仓库
+bash# 克隆仓库
 git clone https://github.com/pichub/pichub.git
 cd pichub
 
@@ -430,7 +445,6 @@ php artisan migrate --seed
 # 启动开发服务器
 php artisan serve
 npm run dev
-
 📄 开源协议
 本项目基于 MIT License 开源，您可以自由使用、修改和分发。
 🙏 鸣谢
@@ -495,4 +509,3 @@ Intervention Image - PHP 图像处理库
     <sub>Copyright © 2024 PicHub. All rights reserved.</sub>
   </p>
 </div>
-```

@@ -145,12 +145,12 @@ PicHub 提供多层次的安全防护措施，确保图像数据的安全性：
 
 ### 💼 企业级功能
 
-<details>
-### 👥 强大的用户系统
+#### 👥 强大的用户系统
 
-PicHub 提供了细粒度的权限管理系统，支持灵活的角色和权限分配。通过用户角色和权限控制，您可以根据需求灵活设置不同级别的访问和操作权限。
+PicHub 提供了细粒度的权限管理系统，支持灵活的角色和权限分配。您可以根据需求灵活设置不同级别的访问和操作权限。
 
-#### **用户权限系统示例**
+##### **用户权限系统示例**
+
 ```php
 class UserPermissionSystem {
     // 权限控制
@@ -171,15 +171,15 @@ class UserPermissionSystem {
         'admin' => ['*']  // 管理员：所有权限
     ];
 }
-功能特点：
-多角色支持：支持游客、普通用户、VIP 和管理员等角色。
+功能特点
+多角色支持：支持游客、普通用户、VIP 和管理员等角色，每个角色可以访问不同功能。
 
-细粒度权限：每个操作和资源可以根据角色进行精细化控制。
+细粒度权限：每个操作和资源可以根据角色进行精细化控制，确保用户权限的精准管理。
 
-审计日志：详细记录所有操作，确保合规性和可追溯性。
+审计日志：详细记录所有用户操作，确保合规性和可追溯性。
 
 多租户架构与企业级功能
-多租户架构：支持企业级的多租户隔离，保证不同企业数据的安全性。
+多租户架构：支持企业级的多租户隔离，确保不同企业数据的安全性。
 
 SSO 单点登录：集成 LDAP、OAuth2、SAML 等协议，提升安全性和用户体验。
 
@@ -212,6 +212,7 @@ API 调用次数计费
 
 🚀 快速开始
 🐳 Docker 一键部署（推荐）
+
 # 1. 下载 docker-compose.yml
 curl -O https://raw.githubusercontent.com/pichub/pichub/main/docker-compose.yml
 
@@ -259,12 +260,12 @@ php artisan queue:work --daemon &
 
 # 9. 配置定时任务
 (crontab -l ; echo "* * * * * cd /path/to/pichub && php artisan schedule:run >> /dev/null 2>&1") | crontab -
+
 </details>
 🤝 参与贡献
 我们欢迎所有形式的贡献！无论是报告 Bug、提出新功能、改进文档还是提交代码。
 
 如何贡献：
-
 Fork 本仓库
 
 创建功能分支 (git checkout -b feature/AmazingFeature)
@@ -308,3 +309,4 @@ Intervention Image - PHP 图像处理库
 📺 B站：PicHub官方账号
 
 <div align="center"> <p> <b>🌟 如果 PicHub 对您有帮助，请给我们一个 Star！🌟</b> </p> <p> <i>Made with ❤️ by PicHub Team</i> </p> <p> <sub>Copyright © 2024 PicHub. All rights reserved.</sub> </p> </div> ```
+

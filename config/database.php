@@ -1,4 +1,3 @@
-cat > config/database.php << 'EOF'
 <?php
 
 use Illuminate\Support\Str;
@@ -71,4 +70,3 @@ return [
     ],
 
 ];
-EOF

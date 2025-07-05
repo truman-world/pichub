@@ -1,6 +1,4 @@
-# .github/workflows/deploy.yml
-
-name: Build and Deploy Standalone App to Aliyun ECS
+name: Deploy Laravel App to Aliyun ECS
 
 on:
   push:
@@ -8,46 +6,42 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Setup PHP with Composer
+        uses: shivammathur/setup-php@v2
         with:
-          node-version: '18'
-          cache: 'npm'
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, fileinfo, pdo, pdo_pgsql # 添加您需要的扩展
+          tools: composer
 
-      - name: Install Dependencies
-        run: npm install
+      - name: Install Composer Dependencies
+        run: composer install --no-dev --optimize-autoloader
 
-      - name: Create .env file
+      - name: Prepare .env file
         run: |
-          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
-          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
-          echo "NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}" >> .env
+          echo "APP_NAME=PicHub" > .env
+          echo "APP_ENV=production" >> .env
+          echo "APP_KEY=${{ secrets.APP_KEY }}" >> .env # 您需要在GitHub Secrets中设置一个APP_KEY
+          echo "APP_DEBUG=false" >> .env
+          echo "APP_URL=${{ secrets.APP_URL }}" >> .env
 
-      - name: Build Standalone Project
-        run: npm run build
-        
+          echo "DB_CONNECTION=pgsql" >> .env
+          echo "DB_HOST=127.0.0.1" >> .env
+          echo "DB_PORT=5432" >> .env
+          echo "DB_DATABASE=${{ secrets.DB_DATABASE }}" >> .env
+          echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+
       - name: Create Deployment Package
-        run: |
-          mkdir -p deploy
-          cp -r .next/standalone/. deploy/
-          cp -r .next/static deploy/.next/static
-          if [ -d "public" ]; then
-            cp -r public deploy/public
-          fi
-          cp .env deploy/
-          mkdir -p deploy/prisma
-          cp prisma/schema.prisma deploy/prisma/
-          cd deploy
-          tar -zcf ../deploy.tar.gz .
+        run: tar -zcf deploy.tar.gz --exclude-from='.gitignore' .
 
-      - name: Deploy Package to Server
+      - name: Deploy to Server
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -56,7 +50,7 @@ jobs:
           source: "deploy.tar.gz"
           target: "/www/wwwroot/8.148.7.13"
 
-      - name: Unpack, Sync DB, and Restart App
+      - name: Run Deployment Commands on Server
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -64,30 +58,22 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /www/wwwroot/8.148.7.13
-            
-            if [ ! -f deploy.tar.gz ]; then
-              echo "❌ Deployment package not found! Aborting."
-              exit 1
-            fi
-
             tar -zxf deploy.tar.gz
             rm deploy.tar.gz
-            echo "✅ New package unpacked."
             
-            # --- 核心修复：在 server.js 顶部自动注入 dotenv 配置 ---
-            # 这确保了应用在启动时就能加载 .env 文件
-            sed -i "1s;^;require('dotenv').config();\n;" server.js
-            echo "✅ Patched server.js with dotenv."
+            # 设置PHP版本
+            export PATH=/www/server/php/82/bin:$PATH
 
-            export PATH=/www/server/nodejs/v18.20.8/bin:$PATH
-            
-            # 现在这个命令可以找到 DATABASE_URL 了，因为它被 dotenv 加载了
-            npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss
-            echo "✅ Database schema synchronized."
-            
-            PM2_BIN=/www/server/nodejs/v18.20.8/bin/pm2
-            
-            $PM2_BIN delete pichub || true
-            $PM2_BIN start server.js --name "pichub"
-            $PM2_BIN save
-            echo "✅ Application restarted/started successfully!"
+            # 运行数据库迁移
+            php artisan migrate --force
+
+            # 优化配置和路由缓存
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            # 设置正确的文件权限
+            chown -R www:www .
+            chmod -R 755 storage bootstrap/cache
+
+            echo "✅ Deployment successful!"

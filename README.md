@@ -1,56 +1,277 @@
-# PicHub - 企业级图像资产管理平台
+<div align="center">
+  <img src="https://via.placeholder.com/200x200" alt="PicHub Logo" width="200" height="200">
+  
+  # PicHub
+  
+  ### 🖼️ 企业级图像资产管理平台
+  
+  [![Laravel](https://img.shields.io/badge/Laravel-11.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
+  [![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://www.php.net)
+  [![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
+  [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com)
+  
+  [功能特性](#-核心功能) • [快速开始](#-快速开始) • [技术架构](#-技术架构) • [路线图](#-发展路线图) • [参与贡献](#-参与贡献)
+  
+</div>
 
-PicHub 旨在成为一个功能强大、安全可靠、高度可扩展的私有化图像资产管理与分发平台。它不仅是开发者的图床工具，更是面向团队、企业乃至商业运营的全功能解决方案。项目灵感源于业界优秀的图床系统，并致力于在现代化架构上提供更卓越的体验。
+---
 
-## 核心功能与未来蓝图 🚀
+## 📋 项目简介
 
-PicHub 的功能规划涵盖了从个人使用到商业运营的全部需求：
+PicHub 是一个功能强大、安全可靠的私有化图像资产管理平台，专为个人开发者、团队协作和企业级应用设计。它不仅仅是一个图床工具，更是一个完整的图像生态系统解决方案。
 
-### 用户与权限体系
+### 🎯 我们的愿景
 
-- [x] **多用户系统**：支持用户注册与登录。
-- [x] **角色组控制**：内置游客、普通用户、管理员等角色，并支持自定义角色组，精细控制上传、管理等权限。
-- [ ] **接口支持 (API)**：为每个用户生成独立的API Token，方便与其他程序集成。
+- **🚀 高性能**：毫秒级响应，支持高并发访问
+- **🔒 安全可靠**：多层安全防护，数据加密存储
+- **📈 可扩展**：模块化设计，轻松扩展新功能
+- **🎨 现代UI**：响应式设计，完美支持移动端
+- **🌍 全球化**：多语言支持，CDN加速分发
 
-### 图片管理与处理
+## ✨ 核心功能
 
-- [x] **多种上传方式**：支持拖拽、粘贴、点击和批量上传。
-- [x] **画廊式管理**：以瀑布流或网格形式展示图片，支持懒加载和缩略图预览，优化浏览体验。
-- [x] **高级搜索与筛选**：借鉴GitHub的搜索语法，支持按名称、上传时间、IP、MIME类型等多种维度进行精确查找和排序。
-- [ ] **强大的图片处理**：支持通过 Imagick 或 libvips 驱动进行缩放、裁剪、添加滤镜和自定义水印。
+<table>
+<tr>
+<td width="50%">
 
-### 存储与分享
+### 👥 用户与权限
+- ✅ 多用户系统与角色管理
+- ✅ 细粒度权限控制
+- ✅ API Token认证
+- ✅ 双因素认证(2FA)
+- ✅ SSO单点登录支持
 
-- [x] **多存储策略**：内置本地、FTP、SFTP、S3、阿里云OSS、腾讯云COS等多种存储适配器，可在后台一键切换。
-- [x] **原图保护**：可选的图片链接保护机制，防止原图被盗链。
-- [x] **嵌入式代码**：自动生成适用于HTML、Markdown、BBCode等多种格式的嵌入代码。
-- [ ] **密码分享**：为单个图片或整个相册设置访问密码。
+</td>
+<td width="50%">
 
-### 商业与运营
+### 🖼️ 图片管理
+- ✅ 多种上传方式（拖拽/粘贴/API）
+- ✅ 智能图片处理与压缩
+- ✅ 相册分类管理
+- ✅ 批量操作支持
+- ✅ AI图片标签识别
 
-- [ ] **套餐系统**：管理员可创建不同的订阅套餐，设置容量、权限和有效期。
-- [ ] **阶梯价格**：为同一套餐设置月付、季付、年付等不同价格策略。
-- [ ] **支付集成**：计划适配支付宝、微信等主流支付网关。
-- [ ] **优惠券与工单**：内置优惠券生成与管理，以及用户工单支持系统。
+</td>
+</tr>
+<tr>
+<td width="50%">
 
-### 系统管理
+### 💾 存储方案
+- ✅ 本地存储
+- ✅ 云存储（S3/OSS/COS）
+- ✅ FTP/SFTP远程存储
+- ✅ 分布式存储支持
+- ✅ 自动备份机制
 
-- [ ] **站内公告**：向所有用户发布系统公告。
-- [ ] **内容审核**：对接腾讯云/阿里云内容安全服务，或自建NsfwJS接口，自动审核上传内容。
-- [ ] **举报管理**：用户可举报违规图片，管理员在后台进行处理。
-- [ ] **邮件与短信系统**：集成邮件和短信服务，用于通知和验证。
+</td>
+<td width="50%">
 
-## 技术选型与优势 🏆
+### 💼 商业功能
+- ✅ 灵活的套餐系统
+- ✅ 多种支付方式集成
+- ✅ 用量统计与计费
+- ✅ 优惠券与促销系统
+- ✅ 完整的工单系统
 
-为了支撑如此宏大的功能体系，我们选择了业界最成熟、最稳健的 Laravel 生态系统：
+</td>
+</tr>
+</table>
 
-- **后端 (Backend)**：PHP 8.2+ & Laravel 11。Laravel 作为一个“全家桶”框架，为我们提供了无与伦比的开发效率和生产力。其自带的认证、授权、队列、任务调度等功能，是实现本项目复杂业务逻辑的基石。
-- **前端 (Frontend)**：Blade 模板引擎 & Tailwind CSS。我们采用后端渲染的模式，以获得最佳的首屏加载速度和SEO表现。Blade 提供了强大的模板继承和组件化能力，而 Tailwind CSS 则保证了我们能构建出符合现代审美的、高度定制化的用户界面。
-- **数据库 (Database)**：PostgreSQL / MySQL & Eloquent ORM。Laravel 内置的 Eloquent ORM 是一个极其强大且优雅的工具，它能轻松处理复杂的数据库关系，让数据操作如诗般流畅。
-- **部署 (Deployment)**：Docker & GitHub Actions。我们的最终目标是实现一键式Docker化部署，让任何开发者都能在几分钟内拥有自己的PicHub实例。GitHub Actions 将负责自动化的构建和部署流程。
+### 🎭 高级特性
 
-## 下一步行动 🧭
+- **🔍 智能搜索**：支持复杂查询语法，快速定位图片
+- **🛡️ 内容审核**：AI自动审核，确保内容合规
+- **📊 数据分析**：详细的访问统计和带宽分析
+- **🔗 防盗链**：多重防护机制，保护您的资源
+- **📱 移动优化**：PWA支持，原生APP体验
 
-我们将以此文档为蓝图，开启 PicHub 的全新篇章。首先，我们将清理现有的代码仓库，然后基于全新的 Laravel 技术栈，逐步实现上述核心功能。
+## 🚀 快速开始
 
-感谢您的远见和信任，让我们一起构建一个真正伟大的产品！
+### 系统要求
+
+- PHP >= 8.2
+- MySQL >= 8.0 或 PostgreSQL >= 13
+- Redis >= 6.0
+- Nginx >= 1.20
+
+### 🐳 Docker 部署（推荐）
+
+```bash
+# 克隆项目
+git clone https://github.com/yourusername/pichub.git
+cd pichub
+
+# 复制环境配置
+cp .env.example .env
+
+# 使用 Docker Compose 启动
+docker-compose up -d
+
+# 访问 http://localhost:8000
+
+📦 手动安装
+# 1. 克隆项目
+git clone https://github.com/yourusername/pichub.git
+cd pichub
+
+# 2. 安装依赖
+composer install --optimize-autoloader --no-dev
+npm install && npm run production
+
+# 3. 环境配置
+cp .env.example .env
+php artisan key:generate
+
+# 4. 数据库迁移
+php artisan migrate --seed
+
+# 5. 创建存储链接
+php artisan storage:link
+
+# 6. 优化性能
+php artisan optimize
+
+# 7. 启动队列（后台任务）
+php artisan queue:work --daemon
+
+⚙️ Nginx 配置示例
+server {
+    listen 80;
+    server_name your-domain.com;
+    root /path/to/pichub/public;
+
+    index index.php;
+    client_max_body_size 100M;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+}
+🏗️ 技术架构
+技术栈
+<table>
+<tr>
+<td align="center" width="25%">
+<img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="100">
+<br><b>Laravel 11</b>
+<br>核心框架
+</td>
+<td align="center" width="25%">
+<img src="https://www.mysql.com/common/logos/logo-mysql-170x115.png" width="100">
+<br><b>MySQL/PostgreSQL</b>
+<br>数据存储
+</td>
+<td align="center" width="25%">
+<img src="https://redis.io/images/redis-white.png" width="100">
+<br><b>Redis</b>
+<br>缓存队列
+</td>
+<td align="center" width="25%">
+<img src="https://tailwindcss.com/_next/static/media/tailwindcss-mark.3c5441fc7a190fb1800d4a5c7f07ba4b1345a9c8.svg" width="100">
+<br><b>Tailwind CSS</b>
+<br>UI框架
+</td>
+</tr>
+</table>
+
+架构设计
+┌─────────────────────────────────────────────────────────────┐
+│                          前端展示层                           │
+│                   Blade + Alpine.js + Tailwind              │
+├─────────────────────────────────────────────────────────────┤
+│                          应用服务层                           │
+│              Controllers → Services → Repositories          │
+├─────────────────────────────────────────────────────────────┤
+│                          核心业务层                           │
+│        认证授权 | 图片处理 | 存储管理 | 支付系统              │
+├─────────────────────────────────────────────────────────────┤
+│                          基础设施层                           │
+│           MySQL/PostgreSQL | Redis | Storage | Queue        │
+└─────────────────────────────────────────────────────────────┘
+
+📅 发展路线图
+🎯 Phase 1 - 基础功能（当前）
+
+ 用户认证系统
+ 图片上传与管理
+ 基础存储支持
+ API接口开发
+ 相册功能
+
+🚧 Phase 2 - 进阶功能
+
+ 云存储集成
+ 图片处理队列
+ 内容审核系统
+ 统计分析面板
+ 移动端适配
+
+🔮 Phase 3 - 企业特性
+
+ 多租户支持
+ 高级权限管理
+ 计费系统
+ 工单系统
+ API网关
+
+🌟 Phase 4 - 生态建设
+
+ 插件市场
+ 开发者API
+ 移动APP
+ 桌面客户端
+ CI/CD集成
+
+🤝 参与贡献
+我们欢迎所有形式的贡献！查看 CONTRIBUTING.md 了解如何开始。
+贡献方式
+
+🐛 报告Bug
+💡 提出新功能建议
+📝 改进文档
+🔧 提交代码
+🌍 帮助翻译
+
+开发指南
+# Fork 项目后
+git clone https://github.com/你的用户名/pichub.git
+cd pichub
+
+# 创建功能分支
+git checkout -b feature/amazing-feature
+
+# 提交更改
+git commit -m 'Add some amazing feature'
+
+# 推送到分支
+git push origin feature/amazing-feature
+
+# 创建 Pull Request
+
+📄 开源协议
+本项目采用 MIT License 开源协议。
+💖 致谢
+感谢所有为 PicHub 做出贡献的开发者！
+特别感谢以下开源项目：
+
+Laravel - 优雅的 PHP Web 框架
+Tailwind CSS - 实用至上的 CSS 框架
+Intervention Image - 强大的图片处理库
+
+
+<div align="center">
+  <p>如果 PicHub 对您有帮助，请给我们一个 ⭐️ Star！</p>
+  <p>Made with ❤️ by PicHub Team</p>
+</div>
+```
+

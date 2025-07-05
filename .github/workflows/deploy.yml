@@ -17,7 +17,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          extensions: mbstring, xml, ctype, fileinfo, pdo, pdo_pgsql # 添加您需要的扩展
+          extensions: mbstring, xml, ctype, fileinfo, pdo, pdo_pgsql
           tools: composer
 
       - name: Install Composer Dependencies
@@ -27,10 +27,9 @@ jobs:
         run: |
           echo "APP_NAME=PicHub" > .env
           echo "APP_ENV=production" >> .env
-          echo "APP_KEY=${{ secrets.APP_KEY }}" >> .env # 您需要在GitHub Secrets中设置一个APP_KEY
+          echo "APP_KEY=${{ secrets.APP_KEY }}" >> .env
           echo "APP_DEBUG=false" >> .env
-          echo "APP_URL=${{ secrets.APP_URL }}" >> .env
-
+          echo "APP_URL=http://8.148.7.13" >> .env
           echo "DB_CONNECTION=pgsql" >> .env
           echo "DB_HOST=127.0.0.1" >> .env
           echo "DB_PORT=5432" >> .env
@@ -61,18 +60,13 @@ jobs:
             tar -zxf deploy.tar.gz
             rm deploy.tar.gz
             
-            # 设置PHP版本
             export PATH=/www/server/php/82/bin:$PATH
 
-            # 运行数据库迁移
             php artisan migrate --force
-
-            # 优化配置和路由缓存
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
 
-            # 设置正确的文件权限
             chown -R www:www .
             chmod -R 755 storage bootstrap/cache
 

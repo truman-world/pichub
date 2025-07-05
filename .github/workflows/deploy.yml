@@ -1,6 +1,6 @@
 # .github/workflows/deploy.yml
 
-name: Build and Deploy Standalone App to Aliyun ECS
+name: Build and Deploy Next.js App
 
 on:
   push:
@@ -30,22 +30,13 @@ jobs:
           echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
           echo "NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}" >> .env
 
-      - name: Build Standalone Project
+      - name: Build Project
         run: npm run build
         
       - name: Create Deployment Package
         run: |
-          mkdir -p deploy
-          cp -r .next/standalone/. deploy/
-          cp -r .next/static deploy/.next/static
-          if [ -d "public" ]; then
-            cp -r public deploy/public
-          fi
-          cp .env deploy/
-          mkdir -p deploy/prisma
-          cp prisma/schema.prisma deploy/prisma/
-          cd deploy
-          tar -zcf ../deploy.tar.gz .
+          # 打包标准Next.js项目所需的所有文件
+          tar -zcf deploy.tar.gz .next public package.json package-lock.json ecosystem.config.js .env prisma
 
       - name: Deploy Package to Server
         uses: appleboy/scp-action@master
@@ -70,24 +61,20 @@ jobs:
               exit 1
             fi
 
+            # 先安装依赖，再解压覆盖
+            export PATH=/www/server/nodejs/v18.20.8/bin:$PATH
+            npm install --production
+
             tar -zxf deploy.tar.gz
             rm deploy.tar.gz
             echo "✅ New package unpacked."
             
-            # --- 核心修复：在 server.js 顶部自动注入 dotenv 配置 ---
-            # 这确保了应用在启动时就能加载 .env 文件
-            sed -i "1s;^;require('dotenv').config();\n;" server.js
-            echo "✅ Patched server.js with dotenv."
-
-            export PATH=/www/server/nodejs/v18.20.8/bin:$PATH
-            
-            # 现在这个命令可以找到 DATABASE_URL 了，因为它被 dotenv 加载了
             npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss
             echo "✅ Database schema synchronized."
             
+            # --- 核心修复：使用 ecosystem 文件来启动应用 ---
             PM2_BIN=/www/server/nodejs/v18.20.8/bin/pm2
             
-            $PM2_BIN delete pichub || true
-            $PM2_BIN start server.js --name "pichub"
+            $PM2_BIN startOrRestart ecosystem.config.js
             $PM2_BIN save
-            echo "✅ Application restarted/started successfully!"
+            echo "✅ Application started/restarted successfully via ecosystem file!"

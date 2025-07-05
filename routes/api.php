@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\V1\AuthController as ApiAuthController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\ImageController;
+use App\Http\Controllers\Api\V1\UploadController;
 use Illuminate\Support\Facades\Route;
 
 // API Version 1
@@ -29,7 +30,21 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             ->only(['show', 'update'])
             ->middleware('can:update,user');
         
-        // Images (will be implemented in Phase 3)
+        // Upload routes
+        Route::post('upload', [UploadController::class, 'upload'])
+            ->name('upload')
+            ->middleware('throttle:30,1');
+            
+        Route::prefix('upload')->name('upload.')->group(function () {
+            Route::post('chunk/init', [UploadController::class, 'initializeChunk'])
+                ->name('chunk.init');
+            Route::post('chunk/upload', [UploadController::class, 'uploadChunk'])
+                ->name('chunk.upload');
+            Route::post('chunk/complete', [UploadController::class, 'completeChunk'])
+                ->name('chunk.complete');
+        });
+        
+        // Images resource
         Route::apiResource('images', ImageController::class);
     });
 });

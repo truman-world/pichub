@@ -1,0 +1,245 @@
+name: Deploy PicHub
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  PHP_VERSION: '8.2'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version: ['8.2', '8.3']
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-version }}
+        extensions: mbstring, dom, fileinfo, mysql, gd, curl, zip, redis
+        coverage: xdebug
+
+    - name: Get composer cache directory
+      id: composer-cache
+      run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+    - name: Cache composer dependencies
+      uses: actions/cache@v3
+      with:
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: ${{ runner.os }}-composer-
+
+    - name: Install Composer dependencies
+      run: composer install --no-progress --prefer-dist --optimize-autoloader
+
+    - name: Prepare Laravel Application
+      run: |
+        cp .env.example .env
+        php artisan key:generate
+
+    - name: Run PHPStan
+      run: ./vendor/bin/phpstan analyse --memory-limit=2G
+
+    - name: Execute tests (Unit and Feature tests) via PHPUnit
+      run: vendor/bin/phpunit --coverage-text
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ env.PHP_VERSION }}
+        extensions: mbstring, dom, fileinfo, mysql, gd, curl, zip, redis
+        coverage: none
+
+    - name: Cache composer dependencies
+      uses: actions/cache@v3
+      with:
+        path: vendor
+        key: ${{ runner.os }}-composer-prod-${{ hashFiles('**/composer.lock') }}
+
+    - name: Install Production Dependencies
+      run: composer install --no-dev --optimize-autoloader --no-progress
+
+    - name: Create deployment artifact
+      env:
+        GITHUB_SHA: ${{ github.sha }}
+      run: tar -czf "${GITHUB_SHA}".tar.gz --exclude=*.git --exclude=node_modules *
+
+    - name: Store artifact for distribution
+      uses: actions/upload-artifact@v3
+      with:
+        name: app-build
+        path: ${{ github.sha }}.tar.gz
+
+    - name: Create .env file
+      run: |
+        cat > .env << EOF
+        APP_NAME="${{ secrets.APP_NAME }}"
+        APP_ENV=production
+        APP_KEY="${{ secrets.APP_KEY }}"
+        APP_DEBUG=false
+        APP_URL="${{ secrets.APP_URL }}"
+        
+        DB_CONNECTION="${{ secrets.DB_CONNECTION }}"
+        DB_HOST="${{ secrets.DB_HOST }}"
+        DB_PORT="${{ secrets.DB_PORT }}"
+        DB_DATABASE="${{ secrets.DB_DATABASE }}"
+        DB_USERNAME="${{ secrets.DB_USERNAME }}"
+        DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+        
+        REDIS_HOST="${{ secrets.REDIS_HOST }}"
+        REDIS_PASSWORD="${{ secrets.REDIS_PASSWORD }}"
+        REDIS_PORT="${{ secrets.REDIS_PORT }}"
+        
+        MAIL_MAILER="${{ secrets.MAIL_MAILER }}"
+        MAIL_HOST="${{ secrets.MAIL_HOST }}"
+        MAIL_PORT="${{ secrets.MAIL_PORT }}"
+        MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}"
+        MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}"
+        MAIL_ENCRYPTION="${{ secrets.MAIL_ENCRYPTION }}"
+        MAIL_FROM_ADDRESS="${{ secrets.MAIL_FROM_ADDRESS }}"
+        
+        AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}"
+        AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+        AWS_DEFAULT_REGION="${{ secrets.AWS_DEFAULT_REGION }}"
+        AWS_BUCKET="${{ secrets.AWS_BUCKET }}"
+        EOF
+
+    - name: Backup current deployment
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        port: ${{ secrets.PORT }}
+        script: |
+          if [ -d "/www/wwwroot/8.148.7.13" ]; then
+            timestamp=$(date +%Y%m%d_%H%M%S)
+            mkdir -p /www/backup
+            tar -czf /www/backup/pichub_backup_${timestamp}.tar.gz -C /www/wwwroot 8.148.7.13
+            # Keep only last 5 backups
+            ls -t /www/backup/pichub_backup_*.tar.gz | tail -n +6 | xargs rm -f
+          fi
+
+    - name: Deploy to Server
+      uses: appleboy/scp-action@v0.1.5
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        port: ${{ secrets.PORT }}
+        source: "${{ github.sha }}.tar.gz,.env"
+        target: "/tmp"
+
+    - name: Execute deployment script
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        port: ${{ secrets.PORT }}
+        script: |
+          # Extract new release
+          mkdir -p /www/wwwroot/8.148.7.13_new
+          tar -xzf /tmp/${{ github.sha }}.tar.gz -C /www/wwwroot/8.148.7.13_new
+          
+          # Copy .env file
+          cp /tmp/.env /www/wwwroot/8.148.7.13_new/.env
+          
+          # Sync files using rsync (preserve storage)
+          rsync -av --delete \
+            --exclude 'storage/app/public/images' \
+            --exclude 'storage/logs' \
+            --exclude 'storage/framework/cache' \
+            --exclude 'storage/framework/sessions' \
+            /www/wwwroot/8.148.7.13_new/ /www/wwwroot/8.148.7.13/
+          
+          # Set permissions
+          cd /www/wwwroot/8.148.7.13
+          find . -type f -exec chmod 644 {} \;
+          find . -type d -exec chmod 755 {} \;
+          chmod -R 775 storage bootstrap/cache
+          chown -R www:www .
+          
+          # Run Laravel commands
+          php artisan migrate --force
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+          php artisan queue:restart
+          
+          # Clear OPcache
+          php artisan opcache:clear
+          
+          # Health check
+          curl -f http://localhost/up || exit 1
+          
+          # Cleanup
+          rm -rf /www/wwwroot/8.148.7.13_new
+          rm -f /tmp/${{ github.sha }}.tar.gz /tmp/.env
+
+    - name: Send deployment notification
+      if: ${{ secrets.DISCORD_WEBHOOK }}
+      uses: sarisia/actions-status-discord@v1
+      with:
+        webhook: ${{ secrets.DISCORD_WEBHOOK }}
+        title: "PicHub Deployment"
+        description: "Successfully deployed to production"
+        color: 0x00ff00
+
+  rollback:
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: failure()
+    
+    steps:
+    - name: Rollback deployment
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        port: ${{ secrets.PORT }}
+        script: |
+          # Get latest backup
+          latest_backup=$(ls -t /www/backup/pichub_backup_*.tar.gz | head -1)
+          if [ -f "$latest_backup" ]; then
+            echo "Rolling back to $latest_backup"
+            cd /www/wwwroot
+            rm -rf 8.148.7.13_rollback
+            mv 8.148.7.13 8.148.7.13_rollback
+            mkdir 8.148.7.13
+            tar -xzf $latest_backup -C /www/wwwroot
+            cd 8.148.7.13
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            echo "Rollback completed"
+          else
+            echo "No backup found for rollback"
+            exit 1
+          fi
+
+    - name: Send rollback notification
+      if: ${{ secrets.DISCORD_WEBHOOK }}
+      uses: sarisia/actions-status-discord@v1
+      with:
+        webhook: ${{ secrets.DISCORD_WEBHOOK }}
+        title: "PicHub Deployment Failed"
+        description: "Deployment failed and was rolled back"
+        color: 0xff0000

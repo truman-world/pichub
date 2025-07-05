@@ -1,104 +1,56 @@
-<p align="center">
-  <img src="./logo.png" alt="PicHub Logo" width="150"/>
-</p>
+# PicHub - 企业级图像资产管理平台
 
-<h1 align="center">PicHub - 新一代智能图床解决方案</h1>
+PicHub 旨在成为一个功能强大、安全可靠、高度可扩展的私有化图像资产管理与分发平台。它不仅是开发者的图床工具，更是面向团队、企业乃至商业运营的全功能解决方案。项目灵感源于业界优秀的图床系统，并致力于在现代化架构上提供更卓越的体验。
 
-<p align="center">
-  <img alt="构建与部署" src="https://img.shields.io/github/actions/workflow/status/truman-world/pichub/deploy.yml?branch=main&label=Build%20%26%20Deploy&logo=github">
-  <img alt="技术栈" src="https://img.shields.io/badge/teck-Next.js%20%7C%20Prisma%20%7C%20PostgreSQL-blue?logo=next.js">
-  <img alt="许可证" src="https://img.shields.io/github/license/truman-world/pichub?color=green">
-</p>
+## 核心功能与未来蓝图 🚀
 
-**PicHub** 不仅仅是一个简单的图床。它是一个基于现代化技术栈构建的、高度可扩展、安全可控的私有化图像存储与管理平台，专为追求数据所有权、高可定制性和自动化运维的开发者与团队设计。
+PicHub 的功能规划涵盖了从个人使用到商业运营的全部需求：
 
----
+### 用户与权限体系
 
-## 核心特点 ✨
+- [x] **多用户系统**：支持用户注册与登录。
+- [x] **角色组控制**：内置游客、普通用户、管理员等角色，并支持自定义角色组，精细控制上传、管理等权限。
+- [ ] **接口支持 (API)**：为每个用户生成独立的API Token，方便与其他程序集成。
 
-* **🚀 一键式安装向导**: 告别繁琐的命令行配置。首次部署，系统将自动引导您进入图形化安装界面，轻松完成管理员账户和基础设置。
-* **🧩 灵活的存储策略**: 内置强大的存储管理器。默认支持本地服务器存储，并采用面向接口的适配器模式（Adapter Pattern），使您可以轻松扩展对接阿里云OSS、腾讯云COS、Amazon S3等任意云存储服务。
-* **🔐 数据安全与所有权**: 完全私有化部署，您的所有图片和用户数据都掌握在自己手中。采用 `bcrypt` 对密码进行高强度哈希加密，并通过 `HttpOnly` Cookie 配合 `JWT` 保护用户会话，确保用户信息安全。
-* **💻 现代化技术栈**: 使用 **Next.js**、**TypeScript** 和 **Prisma** 等业界前沿技术构建，为您带来极致的开发体验、强大的类型安全和高效的数据库交互。
-* **⚙️ 自动化CI/CD流程**: 集成 **GitHub Actions**，实现真正的 `Push-to-Deploy`。您只需将代码推送到 `main` 分支，即可自动触发测试、构建、打包和服务器部署，极大提升开发效率。
-* **🌐 高度可扩展**: 从存储适配器到API接口，项目在设计之初就充分考虑了未来的功能扩展，为您天马行空的想象力提供坚实的技术基础。
+### 图片管理与处理
 
----
+- [x] **多种上传方式**：支持拖拽、粘贴、点击和批量上传。
+- [x] **画廊式管理**：以瀑布流或网格形式展示图片，支持懒加载和缩略图预览，优化浏览体验。
+- [x] **高级搜索与筛选**：借鉴GitHub的搜索语法，支持按名称、上传时间、IP、MIME类型等多种维度进行精确查找和排序。
+- [ ] **强大的图片处理**：支持通过 Imagick 或 libvips 驱动进行缩放、裁剪、添加滤镜和自定义水印。
 
-## 项目优势 🎯
+### 存储与分享
 
-与其他图床项目相比，PicHub 在以下方面拥有无可比拟的优势：
+- [x] **多存储策略**：内置本地、FTP、SFTP、S3、阿里云OSS、腾讯云COS等多种存储适配器，可在后台一键切换。
+- [x] **原图保护**：可选的图片链接保护机制，防止原图被盗链。
+- [x] **嵌入式代码**：自动生成适用于HTML、Markdown、BBCode等多种格式的嵌入代码。
+- [ ] **密码分享**：为单个图片或整个相册设置访问密码。
 
-#### 1. 模块化与高扩展性 (Modularity & Extensibility)
+### 商业与运营
 
-我们的核心竞争力在于**存储适配器（Storage Adapter）设计模式**。我们没有将文件上传逻辑与任何特定的存储服务（如本地存储）耦合，而是定义了一个统一的 `StorageAdapter` 接口。
+- [ ] **套餐系统**：管理员可创建不同的订阅套餐，设置容量、权限和有效期。
+- [ ] **阶梯价格**：为同一套餐设置月付、季付、年付等不同价格策略。
+- [ ] **支付集成**：计划适配支付宝、微信等主流支付网关。
+- [ ] **优惠券与工单**：内置优惠券生成与管理，以及用户工单支持系统。
 
-```typescript
-// 所有存储驱动都必须遵守的统一规范
-export interface StorageAdapter {
-  upload(fileBuffer: Buffer, filename: string): Promise<string>;
-  delete(filename: string): Promise<void>;
-}
-```
-这意味着：
-* **轻松扩展**: 想支持一个新的云存储商？只需创建一个新的类来实现这个接口，然后在 `StorageManager` 中注册它即可，无需改动任何核心业务代码。
-* **自由切换**: 管理员可以在后台无缝切换存储策略，应用层代码完全无感，实现了业务与存储的彻底解耦。
+### 系统管理
 
-#### 2. 自动化与开发者体验 (Automation & DX)
+- [ ] **站内公告**：向所有用户发布系统公告。
+- [ ] **内容审核**：对接腾讯云/阿里云内容安全服务，或自建NsfwJS接口，自动审核上传内容。
+- [ ] **举报管理**：用户可举报违规图片，管理员在后台进行处理。
+- [ ] **邮件与短信系统**：集成邮件和短信服务，用于通知和验证。
 
-* **数据库迁移自动化**: 我们在部署脚本中集成了 `npx prisma db push`。这意味着您在本地对 `schema.prisma` 文件做的任何模型修改，在部署时都会被自动同步到生产环境的数据库，无需手动执行SQL。
-* **全栈TypeScript**: 从前端组件到后端API，再到数据库模型，完整的类型安全链条不仅减少了运行时错误，还带来了无与伦比的IDE代码补全和重构体验。
-* **Prisma ORM**: 提供了类型安全的数据库查询，让您像操作JavaScript对象一样操作数据库，同时有效防止了SQL注入等常见安全问题。
+## 技术选型与优势 🏆
 
-#### 3. 部署架构：专业、稳健的“动静分离”模式
+为了支撑如此宏大的功能体系，我们选择了业界最成熟、最稳健的 Laravel 生态系统：
 
-我们采用业界标准的 **Standalone** 部署模式，并配合 **Nginx** 实现高效的“动静分离”，这带来了：
-1.  **极致性能**: Nginx 直接处理所有静态资源（CSS, JS, 图片）的请求，速度极快，无需经过Node.js应用，大大降低了服务器负载。
-2.  **高可靠性**: 动态请求由后台的PM2守护进程管理的Node.js服务处理，即使应用崩溃也能被自动重启，确保服务高可用。
-3.  **清晰的职责划分**: Nginx负责“对外接待”和静态文件，Node.js应用专注于核心业务逻辑，架构清晰，易于维护和排错。
+- **后端 (Backend)**：PHP 8.2+ & Laravel 11。Laravel 作为一个“全家桶”框架，为我们提供了无与伦比的开发效率和生产力。其自带的认证、授权、队列、任务调度等功能，是实现本项目复杂业务逻辑的基石。
+- **前端 (Frontend)**：Blade 模板引擎 & Tailwind CSS。我们采用后端渲染的模式，以获得最佳的首屏加载速度和SEO表现。Blade 提供了强大的模板继承和组件化能力，而 Tailwind CSS 则保证了我们能构建出符合现代审美的、高度定制化的用户界面。
+- **数据库 (Database)**：PostgreSQL / MySQL & Eloquent ORM。Laravel 内置的 Eloquent ORM 是一个极其强大且优雅的工具，它能轻松处理复杂的数据库关系，让数据操作如诗般流畅。
+- **部署 (Deployment)**：Docker & GitHub Actions。我们的最终目标是实现一键式Docker化部署，让任何开发者都能在几分钟内拥有自己的PicHub实例。GitHub Actions 将负责自动化的构建和部署流程。
 
----
+## 下一步行动 🧭
 
-## 技术栈 🛠️
+我们将以此文档为蓝图，开启 PicHub 的全新篇章。首先，我们将清理现有的代码仓库，然后基于全新的 Laravel 技术栈，逐步实现上述核心功能。
 
-* **前端**: Next.js (React) / TypeScript
-* **后端**: Next.js API Routes / TypeScript
-* **数据库**: PostgreSQL / Prisma ORM
-* **认证**: JWT (JSON Web Tokens) / Cookies
-* **部署与运维**: GitHub Actions (CI/CD) / PM2 / Nginx (反向代理)
-
----
-
-## 快速开始 🏁
-
-1.  **克隆项目**
-    ```bash
-    git clone [https://github.com/truman-world/pichub.git](https://github.com/truman-world/pichub.git)
-    ```
-2.  **安装依赖**
-    ```bash
-    cd pichub
-    npm install
-    ```
-3.  **配置环境变量**
-    复制 `.env.example` (如果存在) 为 `.env.local`，并填入您的数据库连接信息和密钥。
-    ```env
-    DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
-    JWT_SECRET="YOUR_RANDOM_SECRET_KEY"
-    NEXTAUTH_URL="http://YOUR_DOMAIN_OR_IP:3000"
-    ```
-4.  **启动开发环境**
-    ```bash
-    npm run dev
-    ```
-    首次启动，请访问 `http://localhost:3000`，系统将自动引导您进入安装页面。
-
----
-
-## 贡献指南 🤝
-
-我们欢迎任何形式的贡献！无论是提交 issue、修复 Bug 还是开发新功能。请遵循标准的 Fork & Pull Request 流程。
-
-## 许可证 📜
-
-本项目采用 [MIT](https://opensource.org/licenses/MIT) 许可证。
+感谢您的远见和信任，让我们一起构建一个真正伟大的产品！

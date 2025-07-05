@@ -96,15 +96,16 @@ PicHub 通过高效的缓存机制（Redis）、OPcache 和其他优化手段，
 
 PicHub 提供多层次的安全防护措施，确保图像数据的安全性：
 
-┌─────────────────────────────────────────────────────────────────┐  
-│                        安全防护层级                               │  
-├─────────────────────────────────────────────────────────────────┤  
-│  第一层：WAF防火墙     │  ✓ DDoS防护  ✓ SQL注入拦截  ✓ XSS过滤   │  
-│  第二层：应用安全      │  ✓ CSRF保护  ✓ 请求签名    ✓ Rate限制  │  
-│  第三层：数据安全      │  ✓ AES加密   ✓ 敏感数据脱敏 ✓ 备份加密  │  
-│  第四层：权限控制      │  ✓ RBAC权限  ✓ 双因素认证   ✓ API令牌  │  
-│  第五层：审计追踪      │  ✓ 操作日志  ✓ 异常监控    ✓ 合规报告  │  
-└─────────────────────────────────────────────────────────────────┘
+| **安全防护层级** | **描述** |
+|-------------------|----------|
+| **第一层：WAF 防火墙**  | ✓ DDoS 防护 <br> ✓ SQL 注入拦截 <br> ✓ XSS 过滤 |
+| **第二层：应用安全**   | ✓ CSRF 保护 <br> ✓ 请求签名 <br> ✓ Rate 限制 |
+| **第三层：数据安全**   | ✓ AES 加密 <br> ✓ 敏感数据脱敏 <br> ✓ 备份加密 |
+| **第四层：权限控制**   | ✓ RBAC 权限管理 <br> ✓ 双因素认证 <br> ✓ API 令牌 |
+| **第五层：审计追踪**   | ✓ 操作日志 <br> ✓ 异常监控 <br> ✓ 合规报告 |
+
+这些多层次的防护机制确保 PicHub 在各个层面上提供最高水平的安全保护。
+
 
 ---
 
@@ -181,6 +182,184 @@ PicHub 集成了 LDAP、OAuth2、SAML 等协议，支持单点登录（SSO）。
 
 审计日志
 每一次操作都会被详细记录，支持合规性审计和异常监控，确保系统在各个环节都具备完整的日志记录和异常监控能力。
+
+
+## 🔧 技术特性
+
+<details>
+<summary><b>🗄️ 灵活的存储方案</b></summary>
+
+PicHub 提供了多种存储适配器，支持不同存储方式。以下是存储适配器的示例：
+
+```php
+// PicHub 的存储适配器模式
+interface StorageAdapter {
+    public function store($file, $path);
+    public function delete($path);
+    public function getUrl($path);
+}
+
+// 支持的存储方案
+class LocalStorage implements StorageAdapter { }      // 本地存储
+class S3Storage implements StorageAdapter { }          // Amazon S3
+class OSSStorage implements StorageAdapter { }         // 阿里云 OSS
+class COSStorage implements StorageAdapter { }         // 腾讯云 COS
+class FTPStorage implements StorageAdapter { }         // FTP/SFTP
+class GoogleCloudStorage implements StorageAdapter { } // Google Cloud
+```
+智能分发
+智能分发：根据文件类型和访问频率自动选择存储位置。
+
+冗余备份：支持多地备份，确保数据安全。
+
+存储迁移：一键迁移历史数据到新的存储服务。
+
+</details> <details> <summary><b>⚡ 高性能架构</b></summary>
+PicHub 采用高性能架构设计，确保图像管理的快速和高效。
+
+缓存策略：
+Redis 缓存热点数据
+
+OPcache 加速 PHP 执行
+
+CDN 边缘缓存静态资源
+
+异步处理：
+队列处理图片压缩、缩略图生成
+
+定时任务自动清理过期文件
+
+事件驱动的微服务架构
+
+数据库优化：
+读写分离，主从复制
+
+分表分库，水平扩展
+
+索引优化，查询加速
+
+</details>
+
+📚 开发者指南
+🔌 API 集成示例
+<details> <summary><b>JavaScript/Node.js</b></summary>
+// 使用 PicHub API 上传图片
+const PicHub = require('pichub-sdk');
+
+const client = new PicHub({
+  apiKey: 'your-api-key',
+  endpoint: 'https://your-pichub.com/api'
+});
+
+// 上传图片
+const result = await client.upload({
+  file: './image.jpg',
+  album: 'my-album',
+  metadata: {
+    title: '美丽的风景',
+    tags: ['风景', '自然']
+  }
+});
+
+console.log('图片URL:', result.url);
+console.log('缩略图:', result.thumbnail);
+</details> <details> <summary><b>Python</b></summary>
+import pichub
+
+# 初始化客户端
+client = pichub.Client(
+    api_key='your-api-key',
+    endpoint='https://your-pichub.com/api'
+)
+
+# 上传图片
+with open('image.jpg', 'rb') as f:
+    result = client.upload(
+        file=f,
+        album='my-album',
+        metadata={
+            'title': '美丽的风景',
+            'tags': ['风景', '自然']
+        }
+    )
+
+print(f'图片URL: {result.url}')
+print(f'缩略图: {result.thumbnail}')
+</details>
+🎨 主题定制
+在 config/pichub.php 中自定义主题：
+return [
+    'theme' => [
+        'primary_color' => '#FF2D20',    // 主色调
+        'logo' => '/images/logo.png',     // 自定义 Logo
+        'favicon' => '/images/favicon.ico', // 自定义图标
+        'custom_css' => '/css/custom.css', // 自定义样式
+    ]
+];
+
+🔧 插件开发
+创建自定义存储插件示例：
+namespace App\Plugins\Storage;
+
+use PicHub\Contracts\StorageAdapter;
+
+class MyCustomStorage implements StorageAdapter
+{
+    public function store($file, $path)
+    {
+        // 实现自定义存储逻辑
+    }
+    
+    public function delete($path)
+    {
+        // 实现删除逻辑
+    }
+    
+    public function getUrl($path)
+    {
+        // 返回访问 URL
+    }
+}
+
+// 注册插件
+app()->bind('storage.mycustom', MyCustomStorage::class);
+## 🗺️ 发展路线图
+### ✅ 已完成功能
+核心上传下载功能
+
+用户认证与授权
+
+多存储后端支持
+
+RESTful API
+
+响应式前端界面
+
+### 🚧 开发中功能
+GraphQL API 支持
+
+WebDAV 协议支持
+
+图片 AI 识别标签
+
+视频文件支持
+
+Office 文档预览
+
+### 🔮 规划中功能
+去中心化存储（IPFS）
+
+区块链版权保护
+
+AR/VR 内容支持
+
+实时协作编辑
+
+移动端 APP
+
+
+
+
 ## 🚀 快速开始
 
 ### 🐳 Docker 一键部署（推荐）
